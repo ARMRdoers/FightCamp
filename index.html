@@ -1,1 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Fighter OS — Operation Nov 7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#e63946;--orange:#f4a261;--gold:#e9c46a;--teal:#2a9d8f;--blue:#a8dadc;--water:#38b6ff;--bg:#070809;--card:#0d0f14;--border:#1c1f26;--text:#f0f0f0}
+html,body{background:var(--bg);color:var(--text);font-family:'Barlow Condensed',sans-serif;min-height:100vh;-webkit-tap-highlight-color:transparent}
+.mono{font-family:'JetBrains Mono',monospace}
+button{cursor:pointer;border:none;font-family:'Barlow Condensed',sans-serif;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(.97);opacity:.85}
+input,textarea{font-family:'JetBrains Mono',monospace;background:#111315;border:1px solid var(--border);color:var(--text);border-radius:3px;outline:none;width:100%}
+input:focus,textarea:focus{border-color:var(--red)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:3px}
+::-webkit-scrollbar{width:2px;height:2px}::-webkit-scrollbar-thumb{background:var(--red)}
+#app{max-width:500px;margin:0 auto;min-height:100vh;padding-bottom:80px}
+/* Header */
+#header{background:linear-gradient(180deg,#0f1117,var(--bg));border-bottom:1px solid var(--border);padding:14px 14px 10px;position:sticky;top:0;z-index:20}
+#xp-bar-fill{transition:width .6s cubic-bezier(.4,0,.2,1)}
+/* Nav */
+#nav{background:var(--card);border-bottom:1px solid var(--border);display:flex;position:sticky;top:0;z-index:19}
+.nav-btn{flex:1;background:none;color:#555;font-weight:700;font-size:10px;letter-spacing:1px;padding:9px 2px;border-bottom:2px solid transparent;transition:color .15s}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red)}
+/* Content */
+#content{padding:12px 12px 20px}
+.tab{display:none}.tab.active{display:block}
+/* Animations */
+@keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.tab.active{animation:slideIn .2s ease-out}
+@keyframes popIn{0%{transform:scale(0) translateX(-50%);opacity:0}100%{transform:scale(1) translateX(-50%);opacity:1}}
+#ach-popup{animation:popIn .4s cubic-bezier(.175,.885,.32,1.275)}
+/* Utility */
+.line{border-left:2px solid var(--red);padding:3px 0 3px 10px;margin:4px 0;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa;line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.grid8{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.row{display:flex;gap:8px;align-items:center}
+.row-sb{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.scroll-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px}
+.scroll-row::-webkit-scrollbar{height:0}
+.mb6{margin-bottom:6px}.mb8{margin-bottom:8px}.mb10{margin-bottom:10px}.mb12{margin-bottom:12px}.mb14{margin-bottom:14px}
+.pill{padding:5px 10px;font-weight:800;font-size:10px;letter-spacing:1px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:#666;white-space:nowrap;flex-shrink:0}
+.pill.active-red{background:var(--red);color:#fff;border-color:var(--red)}
+/* Session cards */
+.sess-card{padding:12px;border-radius:3px;display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;border:2px solid var(--border);background:#111315;cursor:pointer;transition:border-color .15s,background .15s}
+.sess-card.done{background:#e6394422;border-color:var(--red)}
+.habit-card{padding:10px 12px;border-radius:3px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;border:2px solid var(--border);background:#111315;cursor:pointer;transition:all .15s}
+.habit-card.done{background:#2a9d8f22;border-color:var(--teal)}
+.check-circle{width:22px;height:22px;border-radius:50%;background:#1c1f26;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+/* Submit btn */
+#submit-btn{width:100%;background:linear-gradient(135deg,var(--red),#c1121f);color:#fff;padding:14px;font-size:17px;font-weight:900;letter-spacing:4px;border-radius:3px;box-shadow:0 4px 18px #e6394455}
+/* Water bar segments */
+.w-seg{flex:1;height:8px;border-radius:2px;background:#1c1f26;transition:background .25s}
+.w-seg.filled{background:var(--water)}
+/* Mini stat card */
+.stat-card{padding:10px;border-radius:3px}
+/* History badge */
+.hbadge{padding:2px 7px;font-size:9px;font-weight:700;border-radius:2px}
+/* Phase pill colors */
+.pc1{color:var(--red)}.pc2{color:var(--orange)}.pc3{color:var(--gold)}.pc4{color:var(--teal)}.pc5{color:var(--blue)}
+/* export/import */
+#export-btn,#import-btn{padding:9px;font-size:11px;font-weight:800;letter-spacing:2px;border-radius:3px;width:100%;margin-top:6px}
+#export-btn{background:var(--teal);color:#000}
+#import-btn{background:none;border:1px solid var(--teal);color:var(--teal)}
+</style>
+</head>
+<body>
+<div id="app">
 
+  <!-- ACHIEVEMENT POPUP -->
+  <div id="ach-popup" style="display:none;position:fixed;top:16px;left:50%;z-index:999;background:#1a1200;border:2px solid var(--gold);padding:14px 22px;border-radius:6px;text-align:center;max-width:280px;box-shadow:0 0 40px #e9c46a55;transform:translateX(-50%)">
+    <div id="ach-icon" style="font-size:28px;margin-bottom:4px"></div>
+    <div style="font-size:10px;letter-spacing:4px;color:var(--gold);margin-bottom:3px">ACHIEVEMENT UNLOCKED</div>
+    <div id="ach-title" style="font-size:18px;font-weight:900;letter-spacing:2px"></div>
+    <div id="ach-desc" class="mono" style="font-size:10px;color:#aaa;margin-top:3px"></div>
+    <div id="ach-xp" style="font-size:13px;color:var(--gold);font-weight:700;margin-top:6px"></div>
+  </div>
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="row-sb mb10">
+      <div>
+        <div class="row mb4">
+          <div style="background:var(--red);padding:2px 7px;font-size:9px;font-weight:900;letter-spacing:3px" id="badge">OP NOV 7</div>
+          <div class="mono" id="saving-txt" style="font-size:9px;color:#555;display:none">saving...</div>
+        </div>
+        <div style="font-size:clamp(18px,5vw,26px);font-weight:900;letter-spacing:1px;line-height:1" id="rank-display">⬜ WHITE BELT</div>
+      </div>
+      <div style="text-align:right">
+        <div class="mono" style="font-size:9px;color:#555;letter-spacing:2px">DAYS TO FIGHT</div>
+        <div style="font-size:32px;font-weight:900;color:var(--red);line-height:1" id="days-left">--</div>
+        <div class="mono" style="font-size:9px;color:#555">NOV 7 2026</div>
+      </div>
+    </div>
+    <div class="row-sb mb4">
+      <div class="mono" style="font-size:10px;font-weight:700" id="xp-display">0 XP</div>
+      <div class="mono" style="font-size:9px;color:#555" id="xp-next-display"></div>
+    </div>
+    <div style="background:var(--border);height:5px;border-radius:3px;overflow:hidden;margin-bottom:10px">
+      <div id="xp-bar-fill" style="background:linear-gradient(90deg,var(--red),var(--orange));height:100%;width:0%;border-radius:3px"></div>
+    </div>
+    <div class="grid4" id="quick-stats">
+      <div class="card" style="padding:7px 5px;text-align:center"><div style="font-size:13px">🔥</div><div style="font-size:15px;font-weight:900;line-height:1.1" id="qs-streak">0</div><div class="mono" style="font-size:8px;color:#555;margin-top:1px">STREAK</div></div>
+      <div class="card" style="padding:7px 5px;text-align:center"><div style="font-size:13px">⚖️</div><div style="font-size:15px;font-weight:900;line-height:1.1" id="qs-weight">150</div><div class="mono" style="font-size:8px;color:#555;margin-top:1px">WEIGHT</div></div>
+      <div class="card" style="padding:7px 5px;text-align:center"><div style="font-size:13px">📅</div><div style="font-size:15px;font-weight:900;line-height:1.1" id="qs-day">D1</div><div class="mono" style="font-size:8px;color:#555;margin-top:1px">TODAY</div></div>
+      <div class="card" style="padding:7px 5px;text-align:center"><div style="font-size:13px">🏆</div><div style="font-size:15px;font-weight:900;line-height:1.1" id="qs-medals">0</div><div class="mono" style="font-size:8px;color:#555;margin-top:1px">MEDALS</div></div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div id="nav">
+    <button class="nav-btn active" data-tab="hq" onclick="switchTab('hq')"><div style="font-size:15px;margin-bottom:1px">🎮</div>HQ</button>
+    <button class="nav-btn" data-tab="log" onclick="switchTab('log')"><div style="font-size:15px;margin-bottom:1px">✅</div>LOG</button>
+    <button class="nav-btn" data-tab="plan" onclick="switchTab('plan')"><div style="font-size:15px;margin-bottom:1px">📋</div>PLAN</button>
+    <button class="nav-btn" data-tab="stats" onclick="switchTab('stats')"><div style="font-size:15px;margin-bottom:1px">📊</div>STATS</button>
+    <button class="nav-btn" data-tab="hist" onclick="switchTab('hist')"><div style="font-size:15px;margin-bottom:1px">📅</div>HISTORY</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- HQ TAB -->
+    <div class="tab active" id="tab-hq"></div>
+
+    <!-- LOG TAB -->
+    <div class="tab" id="tab-log"></div>
+
+    <!-- PLAN TAB -->
+    <div class="tab" id="tab-plan"></div>
+
+    <!-- STATS TAB -->
+    <div class="tab" id="tab-stats"></div>
+
+    <!-- HISTORY TAB -->
+    <div class="tab" id="tab-hist"></div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const START_DATE = new Date("2026-05-15");
+const FIGHT_DATE = new Date("2026-11-07");
+const TOTAL_DAYS = 176;
+const XP_VALUES = {outdoor:150,lift:150,mma:200,water:100,nutrition:120,reading:80,photo:50,sparring:250,streak_bonus:50};
+
+const RANKS = [
+  {title:"WHITE BELT", minXP:0,    color:"#666",   icon:"⬜"},
+  {title:"YELLOW BELT",minXP:2000, color:"#e9c46a",icon:"🟨"},
+  {title:"ORANGE BELT",minXP:5000, color:"#f4a261",icon:"🟧"},
+  {title:"GREEN BELT", minXP:10000,color:"#2a9d8f",icon:"🟩"},
+  {title:"BLUE BELT",  minXP:18000,color:"#457b9d",icon:"🟦"},
+  {title:"PURPLE BELT",minXP:28000,color:"#9b5de5",icon:"🟪"},
+  {title:"BROWN BELT", minXP:40000,color:"#8b5e3c",icon:"🟫"},
+  {title:"BLACK BELT", minXP:55000,color:"#e63946",icon:"⬛"},
+];
+
+const ACHIEVEMENTS = [
+  {id:"first_blood", title:"FIRST BLOOD",   desc:"Complete your first day",         icon:"🩸",xp:500,  check:s=>s.totalDaysLogged>=1},
+  {id:"week_warrior",title:"WEEK WARRIOR",  desc:"7-day streak",                    icon:"🔥",xp:1000, check:s=>s.maxStreak>=7},
+  {id:"iron_will",   title:"IRON WILL",     desc:"Complete 75 Hard phase",          icon:"⚔️", xp:5000, check:s=>s.totalDaysLogged>=75},
+  {id:"sweat_equity",title:"SWEAT EQUITY",  desc:"50 MMA sessions",                 icon:"🥊",xp:2000, check:s=>s.mmaSessions>=50},
+  {id:"iron_body",   title:"IRON BODY",     desc:"50 lifting sessions",             icon:"🏋️",xp:2000, check:s=>s.liftSessions>=50},
+  {id:"road_warrior",title:"ROAD WARRIOR",  desc:"50 outdoor sessions",             icon:"🌅",xp:2000, check:s=>s.outdoorSessions>=50},
+  {id:"disciplined", title:"DISCIPLINED",   desc:"30 perfect habit days",           icon:"💧",xp:3000, check:s=>s.perfectHabitDays>=30},
+  {id:"cut_master",  title:"CUT MASTER",    desc:"Lose 5 lbs",                      icon:"⚖️", xp:1500, check:s=>s.startWeight-s.currentWeight>=5},
+  {id:"sharp_blade", title:"SHARP BLADE",   desc:"20 sparring sessions",            icon:"⚡",xp:2500, check:s=>s.sparringSessions>=20},
+  {id:"centurion",   title:"CENTURION",     desc:"100 total sessions",              icon:"💯",xp:4000, check:s=>s.totalSessions>=100},
+  {id:"halfway",     title:"HALFWAY THERE", desc:"Day 88 — halfway to Nov 7",       icon:"🎯",xp:2000, check:s=>s.totalDaysLogged>=88},
+  {id:"fight_ready", title:"FIGHT READY",   desc:"Reach 140 lbs",                   icon:"🏆",xp:5000, check:s=>s.currentWeight<=140},
+];
+
+const MACRO_PHASES = [
+  {id:"p1",label:"PRE-CAMP",      dates:"MAY 15 – JUL 28",weeks:"Days 1–75",  span:75, color:"#e63946",weight:"150→143",goal:"Run 75 Hard. Build aerobic base, cut first 7 lbs. Lock in discipline.",lift:"7×/week. Hypertrophy (3×10–12) → strength (4×6–8) by week 6.",mma:"Solo bag, shadow, drilling. No hard sparring — build the tools first.",cardio:"5:30 AM daily: runs, sprints, rope, circuits. Build to 4–5 mi by week 10.",nutrition:"~500 cal deficit. 180–195g protein. No alcohol, cheat meals, or missed gallons.",sparring:"NONE — technique only."},
+  {id:"p2",label:"EARLY CAMP",    dates:"JUL 29 – SEP 9", weeks:"Wks 12–17",  span:43, color:"#f4a261",weight:"143→141",goal:"Install your 3 core gameplan combos. Begin controlled sparring at 60–70%.",lift:"4×/week — explosive, athletic. Power cleans, jumps, plyometrics.",mma:"Light sparring 2×/week. Pad work with coach. Film every session.",cardio:"Round-based: 5×3 min bag at fight pace / 1 min rest.",nutrition:"2,200–2,400 cal sparring days. Carb cycle around sessions.",sparring:"2×/week at 60–70%. Learn your habits and holes."},
+  {id:"p3",label:"PEAK CAMP",     dates:"SEP 10 – OCT 15",weeks:"Wks 18–22",  span:36, color:"#e9c46a",weight:"141→140",goal:"Hard sparring 3×/week. Gameplan locked. Body and cardio at absolute peak.",lift:"3×/week maintenance — heavy, low volume, never to failure.",mma:"Hard sparring 3×/week at 80–90%. Film and review same night.",cardio:"Fight-pace circuits. Full 3–5 round bag sessions at competition output.",nutrition:"Highest calories (2,400–2,600). You train hardest, eat most. 200–210g protein.",sparring:"3×/week hard. Spar heavier opponents. Fix 2 things per session."},
+  {id:"p4",label:"TAPER",         dates:"OCT 16 – NOV 1", weeks:"Wks 23–24",  span:14, color:"#2a9d8f",weight:"140→140",goal:"Volume drops 40%. Intensity stays. Body rebounds. Protect yourself.",lift:"2×/week. 3×3–5 heavy compounds. 35 min max.",mma:"1–2 light sparring only. Mostly drilling and shadow.",cardio:"Shorter, sharper. Keep the engine warm.",nutrition:"Top up glycogen. No added sodium from Oct 25.",sparring:"1–2 sessions at 50% max."},
+  {id:"p5",label:"FIGHT WEEK",    dates:"NOV 2 – NOV 7",  weeks:"Wk 25",      span:6,  color:"#a8dadc",weight:"140→143-145",goal:"Trust the work. Make weight. Rehydrate. Execute.",lift:"ZERO.",mma:"Shadow Mon–Wed only.",cardio:"Easy walks only.",nutrition:"Clean foods. Sodium drops Mon. Rehydrate after weigh-in.",sparring:"NONE."},
+];
+
+const WEEKLY = {
+  p1:{label:"PRE-CAMP (75 HARD)",note:"3 sessions/day · Outdoor 5:30 AM · Lift 2:15 PM · MMA 10:00 PM",days:[
+    {day:"MON",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Distance Run",detail:"5 min walk → 3-mi zone 2 run → final 0.5 mi at 80% → cool-down. 50 min."},{type:"LIFT",time:"2:15 PM",title:"PUSH — Chest / Shoulders / Tris",detail:"Bench 4×6 · OHP 4×6 · Incline DB 3×10 · Laterals 3×15 · Tricep Pushdown 3×12 · Skull Crushers 3×10 · Plank 3×60s"},{type:"MMA",time:"10:00 PM",title:"Kickboxing Fundamentals",detail:"3 rds shadow · 4 rds bag (jab-cross-kick) · 3 rds teep + switch kick · 10-punch combo ×10 · 10 min mobility"}]},
+    {day:"TUE",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Hill Sprints + Jump Rope",detail:"Rope 5 min → 10× hill sprints max effort → 3× 1-min rope bursts. 45 min."},{type:"LIFT",time:"2:15 PM",title:"PULL — Back / Biceps",detail:"Weighted Pull-ups 4×6 · Barbell Row 4×8 · Lat Pulldown 3×10 · Face Pulls 3×15 · Hammer Curls 3×12"},{type:"MMA",time:"10:00 PM",title:"BJJ / Grappling",detail:"Hip escapes + shrimping 10 min · TD drills 20 min · guard passing 15 min · 3 rds live rolling"}]},
+    {day:"WED",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Fartlek Run",detail:"10 min jog → 25 min fartlek (1 min hard/easy) → 10 min cool-down. 50 min."},{type:"LIFT",time:"2:15 PM",title:"LEGS — Squat Focus",detail:"Back Squat 4×6 · RDL 4×8 · Bulgarian Split Squat 3×10 · Leg Press 3×12 · Ham Curl 3×15 · Calf Raises 4×20"},{type:"MMA",time:"10:00 PM",title:"Kickboxing Power Combos",detail:"4 rds bag (power) · 3 rds 10-punch + leg kick · movement + counter 15 min · 2 rds southpaw · 5× 1-min sprints"}]},
+    {day:"THU",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Stadium Stairs / Sled",detail:"10 rounds stairs OR 8× sled push 40yd. 45 min."},{type:"LIFT",time:"2:15 PM",title:"UPPER — Deadlift Day",detail:"Deadlift 4×5 · DB Shoulder Press 3×10 · Barbell Row 3×8 · Weighted Dips 3×10 · Hanging Leg Raise 4×15"},{type:"MMA",time:"10:00 PM",title:"Boxing Focus",detail:"3 rds jab-cross-hook-slip · 3 rds speed bag · 4 rds bag (boxing only) · 2 rds defense + counter"}]},
+    {day:"FRI",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Long Run",detail:"4-mile zone 2. Mental toughness day. 55 min."},{type:"LIFT",time:"2:15 PM",title:"PUSH — Volume Day",detail:"DB Bench 4×12 · Arnold Press 3×12 · Push-ups to failure ×3 · Cable Flye 3×15 · Tricep Ext 3×12"},{type:"MMA",time:"10:00 PM",title:"Full MMA Scramble",detail:"Strike→TD defense 15 min · TD→G&P 15 min · stand-up→clinch 15 min · 3 rds full-speed drilling"}]},
+    {day:"SAT",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Outdoor Circuit",detail:"15 min rope → 5 rds: 10 burpees + 10 box jumps + 20 squat jumps → 1-mi tempo run. 50 min."},{type:"LIFT",time:"2:15 PM",title:"LEGS — Explosive",detail:"Power Clean 4×4 · Front Squat 3×6 · Box Jumps 4×8 · Nordic Curl 3×8 · KB Swing 4×15 · Ab Wheel 4×12"},{type:"MMA",time:"10:00 PM",title:"Long Kickboxing Session",detail:"6 rds bag (full KB) · 3 rds kick defense + counter · 2 rds clinch + knees · teep drill 10 min · 10× 30s bursts"}]},
+    {day:"SUN",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Recovery Walk",detail:"45 min zone 1 only. HR under 120. Mental reset."},{type:"LIFT",time:"2:15 PM",title:"PULL — Recovery",detail:"Wide Pull-ups 4×8 · Single-Arm Row 3×12 · Straight-Arm Pulldown 3×15 · Incline DB Curl 3×12 · Dragon Flag 3×8"},{type:"MMA",time:"10:00 PM",title:"Technique + Film Study",detail:"3 rds shadow at 50% · footwork angles 15 min · 30 min film study (Superlek, Sitthichai, Buakaw) · 15 min stretch"}]},
+  ]},
+  p2:{label:"EARLY CAMP WEEK",note:"Sparring 2×/wk · Lifting 4×/wk · Round-based cardio",days:[
+    {day:"MON",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Round-Based Bag Cardio",detail:"5×3 min bag at full KB pace / 1 min rest → 2-mi jog. 45 min."},{type:"LIFT",time:"2:15 PM",title:"POWER — Olympic + Lower",detail:"Power Clean 4×4 · Back Squat 4×5 · Box Jumps 4×6 · RDL 3×8 · KB Swing 4×15"},{type:"MMA",time:"10:00 PM",title:"Gameplan Installation",detail:"Pad work with coach · drill 3 combos ×15 each · entry→combo→exit sequences"}]},
+    {day:"TUE",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Sprint Intervals",detail:"12× 30s all-out / 90s walk. 1-mi easy jog. 40 min."},{type:"REST",time:"MIDDAY",title:"Active Recovery",detail:"Stretch + mobility + foam roll. Preserve for sparring tonight."},{type:"MMA",time:"10:00 PM",title:"LIGHT SPARRING #1",detail:"3 min shadow → 5 rds at 60–70% → 2 rds specific: teep-and-counter. Film."}]},
+    {day:"WED",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Steady Run + Pickups",detail:"3-mi zone 2 + 6× 200m at 85%. 50 min."},{type:"LIFT",time:"2:15 PM",title:"UPPER — Strength Pull",detail:"Weighted Pull-ups 5×5 · Barbell Row 4×6 · Face Pulls 3×15 · Curls 3×10 · Dragon Flag 3×8"},{type:"MMA",time:"10:00 PM",title:"Combo Drilling + Bag",detail:"All 3 combos ×15 on pads · 4 rds bag · 2 rds: teep→cross→leg kick→exit drill"}]},
+    {day:"THU",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Jump Rope + Footwork",detail:"20 min rope · 15 min mirror drill + angle cuts. 35 min."},{type:"REST",time:"MIDDAY",title:"Rest from Weights",detail:"Ice, stretch, mobility. Preserve for sparring."},{type:"MMA",time:"10:00 PM",title:"LIGHT SPARRING #2",detail:"4 rds light — focus: defense and counters. 2 rds: clinch → separate → counter."}]},
+    {day:"FRI",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"5-Round Fight Cardio",detail:"5×3 min bag/sprint alternating / 1 min rest. Max effort. 35 min."},{type:"LIFT",time:"2:15 PM",title:"PUSH — Explosive",detail:"Bench 4×5 · Push Press 4×5 · Explosive Push-ups 4×8 · Laterals 3×15 · Tricep 3×12"},{type:"MMA",time:"10:00 PM",title:"Pad Work + Drilling",detail:"30 min pads with coach · 20 min solo: film all 3 combos · 2 rds shadow at 80%"}]},
+    {day:"SAT",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Long Run — Fight Pace Finish",detail:"4-mi: first 3 easy, last 1 at 85%. 55 min."},{type:"LIFT",time:"2:15 PM",title:"LEGS — Loaded",detail:"Deadlift 4×5 · Front Squat 3×6 · Walking Lunges 3×12 · Nordic Curl 3×8 · Calf Raises 4×20"},{type:"MMA",time:"10:00 PM",title:"Full Kickboxing Session",detail:"6 rds — first 2 light, rounds 3–6 at 75%. Film."}]},
+    {day:"SUN",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Recovery Walk",detail:"45 min zone 1. Reflect on the week's sparring."},{type:"REST",time:"MIDDAY",title:"Full Rest from Lifting",detail:"No weights Sunday in camp."},{type:"MMA",time:"10:00 PM",title:"Film Review + Shadow",detail:"Watch sparring. Write 2 fixes. 20 min shadow drilling those patterns."}]},
+  ]},
+  p3:{label:"PEAK CAMP WEEK",note:"3 hard sparring sessions · Lifting maintenance only · You will feel beat up — that's the process",days:[
+    {day:"MON",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Fight-Pace Intervals",detail:"10 min warm-up → 8× 400m at 90% / 90s rest → cool-down. 55 min."},{type:"LIFT",time:"2:15 PM",title:"LOWER — Maintenance",detail:"Back Squat 3×5 · RDL 3×6 · Box Jumps 3×5 · Calf Raises 3×15. 40 min max."},{type:"MMA",time:"10:00 PM",title:"HARD SPARRING #1",detail:"2 rds shadow + pads → 5 rds hard at 85% → 1 rd kickboxing-specific. Film."}]},
+    {day:"TUE",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Jump Rope + Movement",detail:"25 min rope · 15 min lateral + diagonal movement. 40 min."},{type:"REST",time:"MIDDAY",title:"Recovery",detail:"Ice knees + shins. 20 min mobility. Nap if possible."},{type:"MMA",time:"10:00 PM",title:"Technical Drilling",detail:"Money shot combo ×25 · defensive exits ×15 · footwork angles ×20. No sparring."}]},
+    {day:"WED",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Easy Flush Run",detail:"30 min zone 2 only. Flush Monday's lactic acid."},{type:"LIFT",time:"2:15 PM",title:"UPPER — Maintenance Push",detail:"Bench 3×5 · OHP 3×5 · Dips 3×8 · Tricep 2×12. 35–40 min."},{type:"MMA",time:"10:00 PM",title:"HARD SPARRING #2",detail:"Tell partner your entries before each round — then execute. 6 rds hard."}]},
+    {day:"THU",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Short Sprints",detail:"8× 100m all-out / walk back. 20 min."},{type:"REST",time:"MIDDAY",title:"Rest",detail:"Stretch. Ice. Foam roll. Mental prep for Friday."},{type:"MMA",time:"10:00 PM",title:"Pad Work + Specifics",detail:"30 min pads: entry combos + counters · 15 min defensive drills · 10 min shadow."}]},
+    {day:"FRI",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Easy Walk Only",detail:"30 min walk. Preserve full output for tonight's session."},{type:"REST",time:"MIDDAY",title:"Save It for Sparring",detail:"No lifting Friday in peak camp."},{type:"MMA",time:"10:00 PM",title:"HARD SPARRING #3 — Fight Sim",detail:"3×3 min (or 5 rds) at near-competition pace. 45s rest. Film every second."}]},
+    {day:"SAT",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Long Recovery Run",detail:"4–5 mi zone 2. Mental recovery."},{type:"LIFT",time:"2:15 PM",title:"PULL — Maintenance",detail:"Weighted Pull-ups 3×5 · Row 3×6 · Face Pulls 3×15 · Curls 2×12. 35–40 min."},{type:"MMA",time:"10:00 PM",title:"Film Review + Correction Drill",detail:"Watch Friday's sparring. 3 corrections. Drill those 45 min. No live work."}]},
+    {day:"SUN",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Recovery Walk",detail:"45 min zone 1 max."},{type:"REST",time:"MIDDAY",title:"Full Rest",detail:"No weights."},{type:"REST",time:"EVENING",title:"Mental Work Only",detail:"No MMA. Watch film, eat well, visualize, sleep early."}]},
+  ]},
+  p4:{label:"TAPER WEEK",note:"Volume drops 40% · Intensity stays sharp · Protect yourself at all costs",days:[
+    {day:"MON",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Short Sharp Run",detail:"2 mi at 80% + 4× 100m strides. 30 min."},{type:"LIFT",time:"2:15 PM",title:"FULL BODY Maintenance",detail:"Squat 3×3 heavy · Bench 3×3 · Pull-ups 3×5. 30–35 min."},{type:"MMA",time:"10:00 PM",title:"Light Sparring — Sharpening",detail:"3 rds at 50–60%. Your 3 combos only. Clean execution."}]},
+    {day:"TUE",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Jump Rope",detail:"15 min. Stay loose."},{type:"REST",time:"MIDDAY",title:"Rest",detail:"No lifting."},{type:"MMA",time:"10:00 PM",title:"Drilling Only",detail:"30 min: all 3 combos, footwork exits. No live work."}]},
+    {day:"WED",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Easy Jog",detail:"2 miles easy. Nothing more."},{type:"LIFT",time:"2:15 PM",title:"UPPER — Final Maintenance",detail:"Bench 3×3 · OHP 3×3 · Pull-ups 3×5. 30 min max."},{type:"MMA",time:"10:00 PM",title:"FINAL LIGHT SPARRING",detail:"Last sparring before fight week. 3 rds at 50%. End on confidence."}]},
+    {day:"THU",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Easy Walk",detail:"30 min. Zone 1."},{type:"REST",time:"MIDDAY",title:"Rest",detail:"No weights."},{type:"MMA",time:"10:00 PM",title:"Shadow + Visualization",detail:"20 min shadow at 40%. Walk through gameplan mentally."}]},
+    {day:"FRI",sessions:[{type:"OUTDOOR",time:"5:30 AM",title:"Easy Walk",detail:"20 min only."},{type:"REST",time:"MIDDAY",title:"Rest",detail:"No weights."},{type:"MMA",time:"10:00 PM",title:"Bag Drilling Only",detail:"20 min on bag at 50%. Your combinations only. Smooth and sharp."}]},
+    {day:"SAT",sessions:[{type:"OUTDOOR",time:"DAILY",title:"Easy Walk",detail:"20–30 min zone 1."},{type:"REST",time:"DAILY",title:"No Lifting",detail:"Zero weights."},{type:"MMA",time:"DAILY",title:"Shadow Only",detail:"15 min slow shadow. Visualize. Prepare mentally."}]},
+    {day:"SUN",sessions:[{type:"OUTDOOR",time:"DAILY",title:"Easy Walk",detail:"20–30 min zone 1."},{type:"REST",time:"DAILY",title:"No Lifting",detail:"Zero weights."},{type:"MMA",time:"DAILY",title:"Shadow Only",detail:"15 min. Slow and deliberate."}]},
+  ]},
+};
+
+const NUTRITION = [
+  {phase:"PRE-CAMP",color:"#e63946",sub:"May 15 – Jul 28",macros:{cal:"1,900–2,100",protein:"180–195g",carbs:"150–180g",fats:"55–65g"},meals:[{time:"MORNING",foods:["4–5 eggs (2 whole + whites)","1 cup oats or cream of rice","Black coffee","16oz water immediately"]},{time:"LUNCH",foods:["6oz chicken or tuna","Brown rice or sweet potato","Greens"]},{time:"PRE-LIFT 2PM",foods:["Banana + 20g protein shake","OR: rice cake + natural PB"]},{time:"POST-LIFT",foods:["40g whey shake","Handful almonds or rice cake"]},{time:"DINNER (work)",foods:["6oz lean beef, tilapia, or chicken","Rice or sweet potato","Greens"]},{time:"POST-MMA 11PM",foods:["40g protein shake","1 cup cottage cheese"]}],note:"1 gallon water daily. Zero cheat meals, zero alcohol — 75 Hard rules, no exceptions."},
+  {phase:"EARLY CAMP",color:"#f4a261",sub:"Jul 29 – Sep 9",macros:{cal:"2,200–2,400 (spar)",protein:"190–200g",carbs:"200–250g spar / 130g drill",fats:"60–70g"},meals:[{time:"MORNING",foods:["5 eggs (3 whole + whites)","1.5 cups rice or oats","Banana or berries"]},{time:"PRE-SPARRING",foods:["White rice 1 cup + 5oz chicken","45–60 min before","Electrolytes before session"]},{time:"POST-SPARRING",foods:["50g whey + fast carbs immediately","White rice + banana","Eat within 20 min"]},{time:"DINNER",foods:["8oz lean protein","Sweet potato or white rice","Greens + olive oil"]},{time:"BEFORE BED",foods:["1 cup cottage cheese","Casein optional"]}],note:"Carb cycle: high on sparring days, moderate on drill days. Protein stays 190–200g every day."},
+  {phase:"PEAK CAMP",color:"#e9c46a",sub:"Sep 10 – Oct 15",macros:{cal:"2,400–2,600",protein:"200–210g",carbs:"220–270g",fats:"65–75g"},meals:[{time:"MORNING",foods:["6 eggs (3 whole + whites)","2 cups rice or oats","Fruit"]},{time:"PRE-SPARRING",foods:["White rice 1.5 cups + 6oz chicken","45 min before","Light on fats/fiber"]},{time:"POST-SPARRING (critical)",foods:["60g protein + fast carbs IMMEDIATELY","Full meal within 60 min"]},{time:"DINNER",foods:["8–10oz lean protein","White or sweet potato","Greens"]},{time:"BEFORE BED",foods:["Cottage cheese + casein shake"]}],note:"Eat aggressively in peak camp. Train hardest = eat most. Never under-eat here."},
+  {phase:"TAPER",color:"#2a9d8f",sub:"Oct 16 – Nov 1",macros:{cal:"2,100–2,300",protein:"200g",carbs:"Slightly reduced",fats:"60–70g"},meals:[{time:"ALL MEALS",foods:["Same structure as peak, slightly smaller","Keep protein at 200g","Whole foods only"]},{time:"SODIUM (from Oct 25)",foods:["No added salt from Oct 25","Cut all processed food","Only: rice, chicken, eggs, potato, greens"]}],note:"You should already be at ~140 by taper. No hard water cut needed."},
+  {phase:"FIGHT WEEK",color:"#a8dadc",sub:"Nov 2–7",macros:{cal:"Maintenance",protein:"180g",carbs:"Clean only",fats:"50g"},meals:[{time:"MON–TUE",foods:["Clean eating, no sodium","Full hydration — 1 gallon both days"]},{time:"WED–THU",foods:["Same clean foods","Water reduces to 64oz Wed, 48oz Thu"]},{time:"FRI PRE-WEIGH-IN",foods:["Small meal 5–6 hrs before: rice + chicken","Small sips water until scale"]},{time:"FRI POST-WEIGH-IN",foods:["Immediately: 500ml electrolyte drink","Min 0–30: banana + 2 rice cakes","Min 30–60: water + chicken/eggs","Hr 1–2: 2 cups white rice + 6oz chicken + potato","Evening: light dinner by 7 PM. Sleep 10 PM."]},{time:"SAT FIGHT DAY",foods:["3 hrs before: banana + rice + protein shake","1 hr before: water + electrolytes only"]}],note:"You're cutting 0–1 lb of water max. The weight drop happened over 5 months."},
+];
+
+const FIGHT_TIPS = [
+  {cat:"GAMEPLAN",icon:"♟️",color:"#e63946",tips:["Pick 3 combinations and ONE money shot. Drill to reflex. Complexity loses — precision wins.","Establish your teep in the first 30 seconds. Set distance. Let them feel it immediately.","Lead leg kick = highest-volume weapon. Scores, fatigues their leg, sets up right hand.","Train a counter for the 4 most common attacks: jab, jab-cross, leg kick, overhand right.","Spar adversity: 'I'm down in round 3.' Force these in practice so they're familiar fight night."]},
+  {cat:"TECHNICAL",icon:"🎯",color:"#f4a261",tips:["Footwork wins fights before punches do. Control distance, control the fight.","Jab constantly — not to hurt, but to measure distance, disrupt rhythm, time kicks.","Body shots are underused at amateur level. Develop a liver shot and mid-body cross.","After every combo: exit with a step to an angle — never straight back.","Film every sparring session and watch it that night. You'll see habits you can't feel."]},
+  {cat:"CONDITIONING",icon:"🫁",color:"#e9c46a",tips:["Your opponent didn't do 75 Hard. Your cardio is a weapon — stay busy in the second half of rounds.","Train at 110% of fight demands. 3-round fight = train for 6. 5 rounds = train for 8.","Add 'dead legs' rounds: 20 squats immediately before pads. Simulate round 3.","Develop explosive counters when fatigued. Train the recovery reaction."]},
+  {cat:"MENTAL GAME",icon:"🧠",color:"#2a9d8f",tips:["Visualization is a trainable skill. 10 min every night fight week — walk through the fight round by round.","Build a pre-fight routine NOW. Music → shadow → breathe → focus word. Repeat every sparring session.","Nerves = your body loading the weapon. Welcome them and aim them.","Write your complete gameplan on paper the night before. Reading it encodes it subconsciously.","The fight will deviate from plan. Train your ability to adjust mid-round."]},
+  {cat:"INJURY PREV",icon:"🩹",color:"#a8dadc",tips:["Wrap your hands every single session. Every time. No exceptions.","Ice knees and shins after every bag session in camp. Daily.","Cut sparring 3 weeks out, eliminate fight week. One injury ends camp.","7–8 hrs sleep in camp. Under-sleeping tanks sparring quality more than anything.","Address any issue immediately. A small injury ignored = DNF on fight week."]},
+];
+
+const FIGHT_WEEK_DAYS = [
+  {day:"MON NOV 2",label:"ACTIVATE",training:"20 min light shadowboxing. Feel sharp and fluid.",nutrition:"Clean eating, no sodium. Full gallon water.",mental:"Write complete gameplan on paper tonight.",weight:"140–141"},
+  {day:"TUE NOV 3",label:"SHARPEN",training:"Combo drilling 20 min. Your 3 combinations only, slow and exact.",nutrition:"Same as Monday. Reduce water to ~80oz.",mental:"Watch your best sparring clip from camp. End on confidence.",weight:"140"},
+  {day:"WED NOV 4",label:"FOCUS",training:"15 min shadow only. Footwork and entries. Nothing hard.",nutrition:"No sodium. 64oz water. Clean foods only.",mental:"Visualize the fight round by round. See execution.",weight:"139–140"},
+  {day:"THU NOV 5",label:"REST",training:"Walk only. 20–30 min. Stay off your feet.",nutrition:"Light clean meals. 48oz water.",mental:"Read your gameplan again. Trust the prep.",weight:"138–139"},
+  {day:"FRI NOV 6",label:"WEIGH-IN",training:"NONE pre-weigh-in. After: light shadow to wake the body.",nutrition:"Small meal 5–6 hrs before. Full rehydration protocol after scale.",mental:"Weigh-in is a performance. Walk up confident. Set the tone.",weight:"MAKE 140"},
+  {day:"SAT NOV 7",label:"FIGHT NIGHT",training:"2 hrs before: light warm-up. Shadow, pads, get loose. Stop 45 min out.",nutrition:"3 hrs before: banana + rice + protein. 1 hr before: water + electrolytes only.",mental:"Pre-fight routine: music → shadow → breathe → focus word. Trust the work.",weight:"Walk in 143–145"},
+];
+
+const MARKETING = {
+  platforms:[
+    {name:"INSTAGRAM REELS",icon:"📱",priority:"PRIMARY",color:"#e63946",strategy:"Post 1 Reel daily minimum. Every session = content.",ideas:["5:30 AM outdoor clips — raw pre-sunrise energy. Discipline on display.","'10 PM MMA after a 9-hr work shift' — the contrast is your hook.","Heavy bag combo breakdowns — slow-mo the kicks for max engagement.","'Day X of 75 Hard' weekly check-ins — document the transformation live.","Coaching POV: talk to camera as if teaching a technique to a client.","Before/after physique at Day 0, 25, 50, 75."]},
+    {name:"TIKTOK",icon:"🎵",priority:"CROSS-POST",color:"#f4a261",strategy:"Repost every Reel directly. Double reach, zero extra work.",ideas:["Every IG Reel → TikTok same day.","'POV: You hired me as your kickboxing coach'","'How to throw a proper leg kick in 60 seconds'","Day-in-the-life: school → work → 10 PM training."]},
+    {name:"IG STORIES",icon:"🔄",priority:"DAILY TRUST",color:"#e9c46a",strategy:"Stories convert followers into clients. Post 4–6/day.",ideas:["Every morning: 5:30 AM check-in. Even 10 seconds.","Gallon tracking — post each time you refill.","Late-night bag clip — 'still working while you sleep'.","Weekly CTA: 'DM me for 1-on-1 kickboxing coaching'"]},
+    {name:"YOUTUBE SHORTS",icon:"▶️",priority:"LONG-TERM",color:"#2a9d8f",strategy:"Shorts compound. Build the library now.",ideas:["Full combo breakdowns with captions.","Weekly 75 Hard update — more depth than a Reel.","'Train with me' — full session start to finish.","'The #1 mistake beginners make throwing a roundhouse kick'"]},
+  ],
+  hooks:[
+    {hook:"I train 3× a day between school and a 9 PM work shift. Here's what that looks like.",why:"Respect + relatability. Viewers feel the sacrifice."},
+    {hook:"Day [X] of 75 Hard — cutting from 150 to 140. No days off.",why:"Real-time transformation. People root for you."},
+    {hook:"This is the combo I drill every single night after work.",why:"Expertise signal — serious practitioner, not just a talker."},
+    {hook:"If you want to learn kickboxing, stop doing this one thing.",why:"Contrarian hook. Stops the scroll instantly."},
+    {hook:"What 75 days of MMA training at 10 PM does to your body.",why:"Curiosity gap. People want to see the result."},
+    {hook:"POV: Your kickboxing coach just finished his 9-hour shift.",why:"Makes coaching feel personal and accessible."},
+  ],
+  offers:[
+    {tier:"ONLINE COACHING",price:"$150–250/mo",color:"#e63946",detail:"Custom kickboxing + conditioning program. Check-ins via DM. Clients film sessions, you review and respond. Scalable."},
+    {tier:"IN-PERSON 1-ON-1",price:"$60–80/session",color:"#f4a261",detail:"Private sessions at ARMR Studios. Kickboxing fundamentals, pad work, conditioning. Start with 1–2 clients from your following."},
+    {tier:"SMALL GROUP (2–4)",price:"$35–45/person",color:"#e9c46a",detail:"Group kickboxing + fitness. More income per hour. Great entry point for beginners."},
+    {tier:"75 HARD MMA CHALLENGE",price:"$99 flat",color:"#2a9d8f",detail:"Package this program and sell it every 75 days. People pay to do it alongside you. Zero extra training time."},
+  ],
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+const STORAGE_KEY = "fighter_os_html_v1";
+const INIT_STATE = {xp:0,streak:0,maxStreak:0,startWeight:150,currentWeight:150,totalDaysLogged:0,totalSessions:0,mmaSessions:0,liftSessions:0,outdoorSessions:0,sparringSessions:0,perfectHabitDays:0,achievements:[],logs:{},weights:[]};
+let S = JSON.parse(JSON.stringify(INIT_STATE));
+let todayLog = emptyLog();
+
+function emptyLog(){return {sessions:{outdoor:false,lift:false,mma:false},habits:{water:false,nutrition:false,reading:false,photo:false},waterBottles:0,weight:"",sparring:false,notes:"",xpEarned:0,completed:false};}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ S = JSON.parse(raw); }
+  }catch(e){ console.warn("Load failed",e); }
+  const dk = todayStr();
+  if(S.logs[dk]){ todayLog = {...emptyLog(),...S.logs[dk]}; }
+}
+
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); }
+  catch(e){ alert("Save failed: "+e.message); }
+}
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+function todayStr(){ return new Date().toISOString().split("T")[0]; }
+function getDayNum(){ const d=Math.floor((new Date()-START_DATE)/86400000)+1; return Math.max(1,Math.min(d,TOTAL_DAYS)); }
+function getDaysLeft(){ return Math.max(0,Math.ceil((FIGHT_DATE-new Date())/86400000)); }
+function getRank(xp){ let r=RANKS[0]; for(const rk of RANKS){if(xp>=rk.minXP)r=rk;} return r; }
+function getNextRank(xp){ for(const r of RANKS){if(xp<r.minXP)return r;} return null; }
+function getCurrentPhase(){
+  let cum=0;
+  for(const p of MACRO_PHASES){ cum+=p.span; if(getDayNum()<=cum) return p; }
+  return MACRO_PHASES[MACRO_PHASES.length-1];
+}
+
+function checkAchievements(){
+  const newOnes=[];
+  for(const a of ACHIEVEMENTS){
+    if(!S.achievements.includes(a.id) && a.check(S)){
+      newOnes.push(a);
+      S.achievements.push(a.id);
+      S.xp += a.xp;
+    }
+  }
+  return newOnes;
+}
+
+function showAchievement(a){
+  const el = document.getElementById("ach-popup");
+  document.getElementById("ach-icon").textContent = a.icon;
+  document.getElementById("ach-title").textContent = a.title;
+  document.getElementById("ach-desc").textContent = a.desc;
+  document.getElementById("ach-xp").textContent = "+"+a.xp.toLocaleString()+" XP";
+  el.style.display = "block";
+  setTimeout(()=>{ el.style.display="none"; }, 4000);
+}
+
+// ═══════════════════════════════════════
+// TAB SYSTEM
+// ═══════════════════════════════════════
+let currentTab = "hq";
+function switchTab(id){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+id).classList.add("active");
+  document.querySelector(`[data-tab="${id}"]`).classList.add("active");
+  currentTab = id;
+  renderTab(id);
+}
+
+function renderTab(id){
+  if(id==="hq")    renderHQ();
+  if(id==="log")   renderLog();
+  if(id==="plan")  renderPlan("phases");
+  if(id==="stats") renderStats();
+  if(id==="hist")  renderHist();
+}
+
+// ═══════════════════════════════════════
+// HEADER UPDATE
+// ═══════════════════════════════════════
+function updateHeader(){
+  const rank = getRank(S.xp);
+  const next = getNextRank(S.xp);
+  const xpPct = next ? ((S.xp-rank.minXP)/(next.minXP-rank.minXP))*100 : 100;
+  document.getElementById("rank-display").innerHTML = `<span>${rank.icon}</span> <span style="color:${rank.color}">${rank.title}</span>`;
+  document.getElementById("xp-display").style.color = rank.color;
+  document.getElementById("xp-display").textContent = S.xp.toLocaleString()+" XP";
+  document.getElementById("xp-next-display").textContent = next ? (next.minXP-S.xp).toLocaleString()+" to "+next.title : "MAX RANK";
+  document.getElementById("xp-bar-fill").style.width = Math.min(xpPct,100)+"%";
+  document.getElementById("xp-bar-fill").style.background = `linear-gradient(90deg,${rank.color},${next?.color||rank.color})`;
+  document.getElementById("days-left").textContent = getDaysLeft();
+  document.getElementById("qs-streak").textContent = S.streak+"d";
+  document.getElementById("qs-weight").textContent = S.currentWeight+"lb";
+  document.getElementById("qs-day").textContent = "D"+getDayNum();
+  document.getElementById("qs-medals").textContent = S.achievements.length;
+}
+
+// ═══════════════════════════════════════
+// HQ TAB
+// ═══════════════════════════════════════
+function renderHQ(){
+  const phase = getCurrentPhase();
+  const dayNum = getDayNum();
+  const daysLeft = getDaysLeft();
+  const wl = S.startWeight - S.currentWeight;
+  const dk = todayStr();
+  const tl = S.logs[dk];
+  const done = tl?.sessions?.outdoor && tl?.sessions?.lift && tl?.sessions?.mma;
+  const bottles = tl?.waterBottles||0;
+
+  // Last 7 days grid
+  const days7 = Array.from({length:7},(_,i)=>{
+    const d = new Date(Date.now()-(6-i)*86400000).toISOString().split("T")[0];
+    const lg = S.logs[d];
+    const full = lg?.sessions?.outdoor && lg?.sessions?.lift && lg?.sessions?.mma;
+    const partial = lg?.completed;
+    const isT = d===dk;
+    const dl = ["S","M","T","W","T","F","S"][new Date(d).getDay()];
+    return `<div style="text-align:center">
+      <div class="mono" style="font-size:8px;color:#555;margin-bottom:3px">${dl}</div>
+      <div style="aspect-ratio:1;border-radius:2px;background:${full?"var(--red)":partial?"#e6394666":"#1c1f26"};border:2px solid ${isT?"var(--red)":"transparent"};display:flex;align-items:center;justify-content:center;font-size:10px">${full?"✓":partial?"·":""}</div>
+    </div>`;
+  }).join("");
+
+  // Recent achievements
+  const recentAch = S.achievements.slice(-4).map(id=>{
+    const a=ACHIEVEMENTS.find(a=>a.id===id);
+    return a ? `<div style="background:#1c1f26;padding:5px 9px;border-radius:3px;display:flex;gap:6px;align-items:center"><span style="font-size:14px">${a.icon}</span><div class="mono" style="font-size:8px;color:var(--gold)">${a.title}</div></div>` : "";
+  }).join("");
+
+  document.getElementById("tab-hq").innerHTML = `
+    <!-- Phase banner -->
+    <div style="background:${phase.color}18;border:1px solid ${phase.color}44;border-left:3px solid ${phase.color};padding:10px 12px;border-radius:3px;margin-bottom:10px">
+      <div class="mono" style="font-size:9px;color:${phase.color};letter-spacing:3px;margin-bottom:1px">CURRENT PHASE</div>
+      <div style="font-size:18px;font-weight:900;letter-spacing:2px;color:${phase.color}">${phase.label}</div>
+      <div class="mono" style="font-size:9px;color:#888;margin-top:1px">${phase.dates} · Day ${dayNum}/${TOTAL_DAYS}</div>
+    </div>
+
+    <!-- 7-day grid -->
+    <div class="card mb10" style="padding:10px">
+      <div class="mono mb8" style="font-size:9px;color:#555;letter-spacing:3px">LAST 7 DAYS</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">${days7}</div>
+    </div>
+
+    <!-- Today -->
+    <div class="card mb10" style="padding:12px;border:1px solid #e6394433">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="mono" style="font-size:9px;color:var(--red);letter-spacing:3px">TODAY — DAY ${dayNum}</div>
+        ${done ? '<div style="background:var(--red);padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:2px">DONE ✓</div>' : ''}
+      </div>
+      <div class="grid3 mb10">
+        ${["outdoor","lift","mma"].map(s=>{
+          const d2=tl?.sessions?.[s];
+          return `<div style="background:${d2?"#e6394422":"#111315"};border:1px solid ${d2?"var(--red)":"#1c1f26"};padding:8px 4px;text-align:center;border-radius:3px">
+            <div style="font-size:16px">${s==="outdoor"?"🌅":s==="lift"?"🏋️":"🥊"}</div>
+            <div style="font-size:10px;font-weight:800;color:${d2?"var(--red)":"#666"};margin-top:3px;letter-spacing:1px">${s.toUpperCase()}</div>
+          </div>`;
+        }).join("")}
+      </div>
+      ${!done ? '<button onclick="switchTab(\'log\')" style="width:100%;background:var(--red);color:#fff;padding:11px;font-size:14px;font-weight:900;letter-spacing:3px;border-radius:3px">LOG TODAY →</button>' : ''}
+      <!-- Water mini -->
+      <div style="margin-top:10px;background:#111315;border-radius:3px;padding:8px 10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <div class="mono" style="font-size:9px;color:var(--water);letter-spacing:2px">💧 WATER TODAY</div>
+          <div class="mono" style="font-size:9px;color:${bottles>=8?"var(--water)":"#555"}">${bottles*16}oz / 128oz</div>
+        </div>
+        <div style="display:flex;gap:3px">${Array.from({length:8},(_,i)=>`<div style="flex:1;height:8px;border-radius:2px;background:${i<bottles?"var(--water)":"#1c1f26"};transition:background .2s"></div>`).join("")}</div>
+      </div>
+    </div>
+
+    <!-- Progress bars -->
+    <div class="grid2 mb10">
+      <div class="card" style="padding:10px">
+        <div class="mono mb6" style="font-size:9px;color:#555">WEIGHT CUT</div>
+        <div style="font-size:20px;font-weight:900;color:var(--gold)">${S.currentWeight}<span style="font-size:10px;color:#555">lbs</span></div>
+        <div style="background:#1c1f26;height:4px;border-radius:2px;margin-top:6px;overflow:hidden"><div style="background:var(--gold);height:100%;width:${Math.min(100,(wl/10)*100)}%"></div></div>
+        <div class="mono" style="font-size:8px;color:#888;margin-top:3px">${wl.toFixed(1)}/10 lbs</div>
+      </div>
+      <div class="card" style="padding:10px">
+        <div class="mono mb6" style="font-size:9px;color:#555">CAMP PROGRESS</div>
+        <div style="font-size:20px;font-weight:900;color:var(--teal)">${dayNum}<span style="font-size:10px;color:#555">/${TOTAL_DAYS}</span></div>
+        <div style="background:#1c1f26;height:4px;border-radius:2px;margin-top:6px;overflow:hidden"><div style="background:var(--teal);height:100%;width:${(dayNum/TOTAL_DAYS)*100}%"></div></div>
+        <div class="mono" style="font-size:8px;color:#888;margin-top:3px">${daysLeft} days left</div>
+      </div>
+    </div>
+
+    ${recentAch ? `<div class="card" style="padding:10px"><div class="mono mb8" style="font-size:9px;color:#555;letter-spacing:3px">RECENT MEDALS</div><div style="display:flex;gap:6px;flex-wrap:wrap">${recentAch}</div></div>` : ""}
+  `;
+}
+
+// ═══════════════════════════════════════
+// LOG TAB
+// ═══════════════════════════════════════
+function renderLog(){
+  const dayNum = getDayNum();
+  const dateLabel = new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}).toUpperCase();
+  const alreadyDone = !!S.logs[todayStr()]?.completed;
+
+  let xpPreview = 0;
+  if(todayLog.sessions.outdoor) xpPreview+=XP_VALUES.outdoor;
+  if(todayLog.sessions.lift)    xpPreview+=XP_VALUES.lift;
+  if(todayLog.sessions.mma)     xpPreview+=XP_VALUES.mma;
+  if(todayLog.habits.water)     xpPreview+=XP_VALUES.water;
+  if(todayLog.habits.nutrition) xpPreview+=XP_VALUES.nutrition;
+  if(todayLog.habits.reading)   xpPreview+=XP_VALUES.reading;
+  if(todayLog.habits.photo)     xpPreview+=XP_VALUES.photo;
+  if(todayLog.sparring)         xpPreview+=XP_VALUES.sparring;
+  const allS = todayLog.sessions.outdoor&&todayLog.sessions.lift&&todayLog.sessions.mma;
+  const allH = Object.values(todayLog.habits).every(Boolean);
+
+  // Bottle SVGs
+  const bottleSVGs = Array.from({length:8},(_,i)=>{
+    const filled = i < todayLog.waterBottles;
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer" onclick="setBottles(${i})">
+      <svg width="28" height="36" viewBox="0 0 28 36" fill="none">
+        <rect x="9" y="0" width="10" height="5" rx="2" fill="${filled?"var(--water)":"#1c1f26"}" stroke="${filled?"var(--water)":"#333"}" stroke-width="1"/>
+        <rect x="10" y="5" width="8" height="4" fill="${filled?"#1a6fa8":"#111315"}" stroke="${filled?"var(--water)":"#333"}" stroke-width="1"/>
+        <rect x="4" y="9" width="20" height="24" rx="3" fill="${filled?"#1a4a6e":"#111315"}" stroke="${filled?"var(--water)":"#2a2a2a"}" stroke-width="1.5"/>
+        ${filled?`<rect x="5" y="10" width="18" height="22" rx="2" fill="var(--water)" opacity="0.35"/>
+        <rect x="7" y="12" width="3" height="10" rx="1.5" fill="#fff" opacity="0.2"/>`:""}
+        <text x="14" y="24" text-anchor="middle" font-size="9" font-weight="700" fill="${filled?"var(--water)":"#444"}" font-family="JetBrains Mono,monospace">${i+1}</text>
+      </svg>
+      <div class="mono" style="font-size:7px;color:${filled?"var(--water)":"#444"}">${(i+1)*16}oz</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("tab-log").innerHTML = `
+    <div class="mb12">
+      <div class="mono mb4" style="font-size:9px;color:var(--red);letter-spacing:3px">DAY ${dayNum} — ${dateLabel}</div>
+      <div style="font-size:22px;font-weight:900;letter-spacing:2px">LOG YOUR DAY</div>
+      ${alreadyDone ? '<div class="mono" style="font-size:10px;color:var(--gold);margin-top:3px">⚡ Already logged — update anytime</div>' : ''}
+    </div>
+
+    <!-- Sessions -->
+    <div class="card mb10" style="padding:12px">
+      <div class="mono mb10" style="font-size:9px;color:#555;letter-spacing:3px">TRAINING SESSIONS</div>
+      ${[{k:"outdoor",ic:"🌅",l:"OUTDOOR",s:"5:30 AM",x:XP_VALUES.outdoor},{k:"lift",ic:"🏋️",l:"LIFT",s:"2:15 PM",x:XP_VALUES.lift},{k:"mma",ic:"🥊",l:"MMA",s:"10:00 PM",x:XP_VALUES.mma}].map(({k,ic,l,s,x})=>{
+        const d=todayLog.sessions[k];
+        return `<div class="sess-card ${d?"done":""}" onclick="toggleSession('${k}')">
+          <div style="display:flex;gap:10px;align-items:center">
+            <span style="font-size:22px">${ic}</span>
+            <div><div style="font-size:14px;font-weight:800;letter-spacing:2px;color:${d?"var(--red)":"var(--text)"}">${l}</div><div class="mono" style="font-size:9px;color:#666;margin-top:1px">${s}</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+            <div style="width:26px;height:26px;border-radius:50%;background:${d?"var(--red)":"#1c1f26"};border:2px solid ${d?"var(--red)":"#333"};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900">${d?"✓":""}</div>
+            <div class="mono" style="font-size:9px;color:${d?"var(--red)":"#555"}">+${x}</div>
+          </div>
+        </div>`;
+      }).join("")}
+      <!-- Sparring -->
+      <div class="${todayLog.sparring?"habit-card done":"habit-card"}" style="border-color:${todayLog.sparring?"var(--orange)":"var(--border)"};background:${todayLog.sparring?"#f4a26122":"#111315"}" onclick="toggleSparring()">
+        <div style="display:flex;gap:9px;align-items:center"><span style="font-size:18px">⚡</span><div><div style="font-size:13px;font-weight:800;letter-spacing:2px;color:${todayLog.sparring?"var(--orange)":"#777"}">SPARRING BONUS</div><div class="mono" style="font-size:9px;color:#666">Hard sparring session</div></div></div>
+        <div class="mono" style="font-size:10px;color:${todayLog.sparring?"var(--orange)":"#555"}">+${XP_VALUES.sparring}</div>
+      </div>
+    </div>
+
+    <!-- Water Tracker -->
+    <div class="card mb10" style="padding:12px;border:1px solid #1c4f6e">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div class="mono mb4" style="font-size:9px;color:var(--water);letter-spacing:3px">💧 GALLON TRACKER</div>
+          <div style="font-size:11px;font-weight:700;color:${todayLog.waterBottles>=8?"var(--water)":"#888"}">${todayLog.waterBottles*16}oz / 128oz ${todayLog.waterBottles>=8?"<span style='color:var(--water)'>GALLON HIT ✓</span>":""}</div>
+        </div>
+        <div style="text-align:right"><div style="font-size:22px;font-weight:900;color:${todayLog.waterBottles>=8?"var(--water)":"#555"}">${todayLog.waterBottles}<span style="font-size:12px;color:#555">/8</span></div><div class="mono" style="font-size:8px;color:#555">BOTTLES</div></div>
+      </div>
+      <div style="background:#1c1f26;height:6px;border-radius:3px;overflow:hidden;margin-bottom:12px">
+        <div style="background:linear-gradient(90deg,#1a6fa8,var(--water));height:100%;width:${Math.min(100,(todayLog.waterBottles/8)*100)}%;border-radius:3px;transition:width .3s ease" id="water-prog"></div>
+      </div>
+      <div class="grid8 mb10">${bottleSVGs}</div>
+      <div style="display:flex;gap:7px">
+        <button onclick="addBottle()" style="flex:1;background:#1a4a6e;color:var(--water);padding:9px;font-size:13px;font-weight:900;letter-spacing:2px;border-radius:3px;border:1px solid #1a6fa8">+ BOTTLE</button>
+        <button onclick="removeBottle()" style="flex:1;background:#111315;color:#555;padding:9px;font-size:13px;font-weight:900;letter-spacing:2px;border-radius:3px;border:1px solid #1c1f26">- BOTTLE</button>
+      </div>
+      <div class="mono" style="font-size:9px;color:#555;margin-top:8px;text-align:center">Each bottle = 16oz · 8 bottles = 1 gallon · Habit auto-checks at bottle 8</div>
+    </div>
+
+    <!-- Habits -->
+    <div class="card mb10" style="padding:12px">
+      <div class="mono mb10" style="font-size:9px;color:#555;letter-spacing:3px">DAILY HABITS</div>
+      ${[{id:"water",l:"1 GALLON WATER",ic:"💧"},{id:"nutrition",l:"CLEAN NUTRITION",ic:"🥗"},{id:"reading",l:"10 PAGES READ",ic:"📖"},{id:"photo",l:"PROGRESS PHOTO",ic:"📸"}].map(({id,l,ic})=>{
+        const d=todayLog.habits[id];
+        return `<div class="habit-card ${d?"done":""}" onclick="toggleHabit('${id}')">
+          <div style="display:flex;gap:9px;align-items:center"><span style="font-size:18px">${ic}</span><div style="font-size:13px;font-weight:700;letter-spacing:2px;color:${d?"var(--teal)":"#777"}">${l}</div></div>
+          <div style="display:flex;gap:7px;align-items:center">
+            <div class="mono" style="font-size:9px;color:${d?"var(--teal)":"#555"}">+${XP_VALUES[id]}</div>
+            <div class="check-circle" style="background:${d?"var(--teal)":"#1c1f26"};border-color:${d?"var(--teal)":"#333"}">${d?"✓":""}</div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+
+    <!-- Check-in -->
+    <div class="card mb10" style="padding:12px">
+      <div class="mono mb10" style="font-size:9px;color:#555;letter-spacing:3px">CHECK-IN</div>
+      <div class="mb10">
+        <div class="mono mb6" style="font-size:9px;color:#888">⚖️ WEIGHT (lbs)</div>
+        <input type="number" step="0.1" id="weight-input" value="${todayLog.weight}" placeholder="${S.currentWeight}" style="padding:9px 11px;font-size:18px;font-weight:700"/>
+      </div>
+      <div>
+        <div class="mono mb6" style="font-size:9px;color:#888">📝 SESSION NOTES</div>
+        <textarea id="notes-input" rows="3" placeholder="How did it go? What clicked? What needs work?" style="padding:9px 11px;font-size:11px;resize:none;line-height:1.6">${todayLog.notes}</textarea>
+      </div>
+    </div>
+
+    <!-- XP Preview -->
+    <div style="background:#111315;border:1px solid #1c1f26;padding:10px 12px;border-radius:3px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+      <div><div class="mono" style="font-size:9px;color:#555">XP THIS LOG</div><div style="font-size:24px;font-weight:900;color:var(--gold)">+${xpPreview.toLocaleString()}</div></div>
+      <div style="text-align:right">
+        ${allS?'<div class="mono" style="font-size:9px;color:var(--red)">ALL SESSIONS ✓</div>':""}
+        ${allH?'<div class="mono" style="font-size:9px;color:var(--teal)">ALL HABITS ✓</div>':""}
+        ${allS&&allH?'<div style="font-size:12px;font-weight:800;color:var(--gold);margin-top:2px">PERFECT DAY! 🔥</div>':""}
+      </div>
+    </div>
+
+    <button id="submit-btn" onclick="submitDay()">${alreadyDone?"UPDATE LOG ✓":"SUBMIT DAY ⚡"}</button>
+  `;
+}
+
+// ═══════════════════════════════════════
+// LOG ACTIONS
+// ═══════════════════════════════════════
+function toggleSession(k){
+  todayLog.sessions[k] = !todayLog.sessions[k];
+  renderLog();
+}
+function toggleSparring(){
+  todayLog.sparring = !todayLog.sparring;
+  renderLog();
+}
+function toggleHabit(id){
+  todayLog.habits[id] = !todayLog.habits[id];
+  renderLog();
+}
+function setBottles(i){
+  const filled = i < todayLog.waterBottles;
+  todayLog.waterBottles = filled ? i : i+1;
+  todayLog.habits.water = todayLog.waterBottles >= 8;
+  renderLog();
+}
+function addBottle(){
+  todayLog.waterBottles = Math.min(8, todayLog.waterBottles+1);
+  todayLog.habits.water = todayLog.waterBottles >= 8;
+  renderLog();
+}
+function removeBottle(){
+  todayLog.waterBottles = Math.max(0, todayLog.waterBottles-1);
+  todayLog.habits.water = todayLog.waterBottles >= 8;
+  renderLog();
+}
+
+function submitDay(){
+  const dk = todayStr();
+  const wVal = document.getElementById("weight-input")?.value || todayLog.weight;
+  const nVal = document.getElementById("notes-input")?.value || todayLog.notes;
+  todayLog.weight = wVal;
+  todayLog.notes = nVal;
+
+  const already = !!S.logs[dk]?.completed;
+  let xp = 0;
+  if(todayLog.sessions.outdoor) xp+=XP_VALUES.outdoor;
+  if(todayLog.sessions.lift)    xp+=XP_VALUES.lift;
+  if(todayLog.sessions.mma)     xp+=XP_VALUES.mma;
+  if(todayLog.habits.water)     xp+=XP_VALUES.water;
+  if(todayLog.habits.nutrition) xp+=XP_VALUES.nutrition;
+  if(todayLog.habits.reading)   xp+=XP_VALUES.reading;
+  if(todayLog.habits.photo)     xp+=XP_VALUES.photo;
+  if(todayLog.sparring)         xp+=XP_VALUES.sparring;
+
+  const allH = Object.values(todayLog.habits).every(Boolean);
+  const yest = new Date(Date.now()-86400000).toISOString().split("T")[0];
+  const hadYest = !!S.logs[yest]?.completed;
+  const newStreak = already ? S.streak : (hadYest ? S.streak+1 : 1);
+  if(newStreak>1 && !already) xp += XP_VALUES.streak_bonus * Math.min(newStreak,10);
+
+  todayLog.xpEarned = xp;
+  todayLog.completed = true;
+
+  if(wVal){
+    const ei = S.weights.findIndex(w=>w.date===dk);
+    if(ei>=0) S.weights[ei]={date:dk,weight:parseFloat(wVal)};
+    else S.weights.push({date:dk,weight:parseFloat(wVal)});
+  }
+
+  if(!already){
+    S.xp += xp;
+    S.streak = newStreak;
+    S.maxStreak = Math.max(S.maxStreak, newStreak);
+    S.currentWeight = wVal ? parseFloat(wVal) : S.currentWeight;
+    S.totalDaysLogged++;
+    S.totalSessions += (todayLog.sessions.outdoor?1:0)+(todayLog.sessions.lift?1:0)+(todayLog.sessions.mma?1:0)+(todayLog.sparring?1:0);
+    S.mmaSessions += todayLog.sessions.mma?1:0;
+    S.liftSessions += todayLog.sessions.lift?1:0;
+    S.outdoorSessions += todayLog.sessions.outdoor?1:0;
+    S.sparringSessions += todayLog.sparring?1:0;
+    S.perfectHabitDays += allH?1:0;
+  } else {
+    if(wVal) S.currentWeight = parseFloat(wVal);
+  }
+
+  S.logs[dk] = {...todayLog};
+
+  const newAch = checkAchievements();
+  saveState();
+  updateHeader();
+  renderLog();
+  renderHQ();
+
+  if(newAch.length>0) showAchievement(newAch[0]);
+}
+
+// ═══════════════════════════════════════
+// PLAN TAB
+// ═══════════════════════════════════════
+let planSection = "phases";
+let planPhase = 0;
+let planWkPhase = 0;
+let planWkDay = 0;
+let planNut = 0;
+let planMkt = "platforms";
+let planTip = 0;
+let planFW = 0;
+
+function renderPlan(section){
+  planSection = section || planSection;
+  const subNavItems = [["phases","PHASES"],["weekly","WORKOUTS"],["nutrition","NUTRITION"],["marketing","MARKETING"],["tips","FIGHT TIPS"],["fightweek","FIGHT WEEK"]];
+  const subNav = subNavItems.map(([id,l])=>`<button class="pill ${planSection===id?"active-red":""}" onclick="setPlanSection('${id}')">${l}</button>`).join("");
+
+  let inner = "";
+  if(planSection==="phases") inner = renderPlanPhases();
+  else if(planSection==="weekly") inner = renderPlanWeekly();
+  else if(planSection==="nutrition") inner = renderPlanNutrition();
+  else if(planSection==="marketing") inner = renderPlanMarketing();
+  else if(planSection==="tips") inner = renderPlanTips();
+  else if(planSection==="fightweek") inner = renderPlanFightWeek();
+
+  document.getElementById("tab-plan").innerHTML = `<div class="scroll-row mb12">${subNav}</div>${inner}`;
+}
+function setPlanSection(s){ planSection=s; renderPlan(s); }
+
+function renderPlanPhases(){
+  const pills = MACRO_PHASES.map((p,i)=>`<button class="pill ${planPhase===i?"":""}'" style="background:${planPhase===i?p.color:"#0d0f14"};color:${planPhase===i?"#000":p.color};border-color:${planPhase===i?p.color:"#1c1f26"}" onclick="setPlanPhase(${i})">P${i+1}</button>`).join("");
+  const p = MACRO_PHASES[planPhase];
+  return `<div class="scroll-row mb10">${pills}</div>
+  <div class="card mb8" style="border-left:4px solid ${p.color};padding:14px">
+    <div class="mono mb4" style="font-size:9px;color:${p.color};letter-spacing:3px">${p.dates} · ${p.weeks}</div>
+    <div style="font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:6px">${p.label}</div>
+    <div class="mono" style="font-size:11px;color:#ccc;line-height:1.8">${p.goal}</div>
+  </div>
+  ${[["🏋️ LIFTING",p.lift],["🥊 MMA",p.mma],["🌅 CARDIO",p.cardio],["🥗 NUTRITION",p.nutrition],["⚡ SPARRING",p.sparring]].map(([l,v])=>`<div class="card mb8" style="padding:11px 13px"><div class="mono mb6" style="font-size:9px;letter-spacing:3px;color:#555">${l}</div><div class="mono" style="font-size:11px;color:#bbb;line-height:1.6">${v}</div></div>`).join("")}
+  <div style="background:${p.color};padding:11px 13px;border-radius:3px"><div class="mono" style="font-size:9px;color:#000;margin-bottom:2px">TARGET</div><div style="font-size:18px;font-weight:900;color:#000">${p.weight}</div></div>`;
+}
+function setPlanPhase(i){ planPhase=i; renderPlan("phases"); }
+
+function renderPlanWeekly(){
+  const phaseLabels = ["PRE-CAMP","EARLY CAMP","PEAK CAMP","TAPER"];
+  const wkKeys = ["p1","p2","p3","p4"];
+  const phasePills = phaseLabels.map((l,i)=>{
+    const p=MACRO_PHASES[i];
+    return `<button class="pill" style="background:${planWkPhase===i?p.color:"#0d0f14"};color:${planWkPhase===i?"#000":p.color};border-color:${planWkPhase===i?p.color:"#1c1f26"}" onclick="setPlanWkPhase(${i})">${l}</button>`;
+  }).join("");
+  const key = wkKeys[planWkPhase];
+  const tpl = WEEKLY[key];
+  const p = MACRO_PHASES[planWkPhase];
+  if(!tpl) return "";
+  const SC = {OUTDOOR:"#e9c46a",LIFT:"#e63946",MMA:"#f4a261",REST:"#333"};
+  const dayPills = tpl.days.map((d,i)=>`<button class="pill ${planWkDay===i?"active-red":""}" onclick="setPlanWkDay(${i})">${d.day}</button>`).join("");
+  const sessions = tpl.days[planWkDay].sessions.map(s=>`
+    <div class="card mb8" style="border-top:3px solid ${SC[s.type]||"#333"};padding:12px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+        <div>
+          <div class="mono mb4" style="font-size:9px;letter-spacing:3px;color:${SC[s.type]||"#555"}">${s.type==="OUTDOOR"?"🌅":s.type==="LIFT"?"🏋️":s.type==="MMA"?"🥊":"💤"} ${s.type}</div>
+          <div style="font-size:15px;font-weight:800;letter-spacing:1px">${s.title}</div>
+        </div>
+        <div class="mono" style="font-size:10px;color:var(--red);letter-spacing:2px">${s.time}</div>
+      </div>
+      <div class="mono" style="font-size:10px;color:#999;line-height:1.6">${s.detail}</div>
+    </div>`).join("");
+  return `<div class="scroll-row mb8">${phasePills}</div>
+    <div class="card mb10" style="padding:10px">
+      <div style="font-size:14px;font-weight:800;color:${p.color};margin-bottom:3px">${tpl.label}</div>
+      <div class="mono" style="font-size:9px;color:#888;line-height:1.5">${tpl.note}</div>
+    </div>
+    <div class="scroll-row mb10">${dayPills}</div>
+    ${sessions}`;
+}
+function setPlanWkPhase(i){ planWkPhase=i; planWkDay=0; renderPlan("weekly"); }
+function setPlanWkDay(i){ planWkDay=i; renderPlan("weekly"); }
+
+function renderPlanNutrition(){
+  const pills = NUTRITION.map((n,i)=>`<button class="pill" style="background:${planNut===i?n.color:"#0d0f14"};color:${planNut===i?"#000":n.color};border-color:${planNut===i?n.color:"#1c1f26"}" onclick="setPlanNut(${i})">${n.phase}</button>`).join("");
+  const n = NUTRITION[planNut];
+  const macroCards = [["CAL",n.macros.cal],["PROTEIN",n.macros.protein],["CARBS",n.macros.carbs],["FATS",n.macros.fats]].map(([l,v])=>`<div style="background:#111315;padding:8px 10px;border-radius:3px"><div class="mono" style="font-size:8px;color:#555;margin-bottom:2px">${l}</div><div style="font-size:12px;font-weight:800;color:${n.color}">${v}</div></div>`).join("");
+  const meals = n.meals.map(m=>`<div class="card mb8" style="border-left:3px solid ${n.color};padding:11px 13px"><div class="mono mb8" style="font-size:9px;color:${n.color};letter-spacing:3px">${m.time.toUpperCase()}</div>${m.foods.map(f=>`<div class="line">${f}</div>`).join("")}</div>`).join("");
+  return `<div class="scroll-row mb10">${pills}</div>
+    <div class="card mb8" style="border-left:4px solid ${n.color};padding:13px">
+      <div class="mono mb8" style="font-size:9px;color:${n.color};letter-spacing:3px">${n.sub}</div>
+      <div class="grid2">${macroCards}</div>
+    </div>
+    ${meals}
+    <div style="background:#111315;border:1px solid #1c1f26;padding:11px 13px;border-radius:3px">
+      <div class="mono mb6" style="font-size:9px;color:var(--gold)">⚠ KEY NOTE</div>
+      <div class="mono" style="font-size:10px;color:#aaa;line-height:1.7">${n.note}</div>
+    </div>`;
+}
+function setPlanNut(i){ planNut=i; renderPlan("nutrition"); }
+
+function renderPlanMarketing(){
+  const pills = [["platforms","PLATFORMS"],["hooks","HOOKS"],["offers","OFFERS"]].map(([id,l])=>`<button class="pill ${planMkt===id?"active-red":""}" onclick="setPlanMkt('${id}')">${l}</button>`).join("");
+  let inner = "";
+  if(planMkt==="platforms"){
+    inner = MARKETING.platforms.map(p=>`<div class="card mb8" style="border-top:3px solid ${p.color};padding:12px">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="font-size:18px">${p.icon}</span><div><div style="font-size:14px;font-weight:800">${p.name}</div><div class="mono" style="font-size:9px;color:${p.color};letter-spacing:2px">${p.priority}</div></div></div>
+      <div class="mono mb8" style="font-size:10px;color:var(--orange);line-height:1.5">${p.strategy}</div>
+      ${p.ideas.map(i=>`<div class="line">${i}</div>`).join("")}
+    </div>`).join("") + `<div class="card" style="padding:12px">
+      <div class="mono mb8" style="font-size:9px;color:#ffd700">📣 YOUR BIO</div>
+      <div class="mono" style="font-size:11px;color:#ddd;line-height:1.8;border-left:3px solid #ffd700;padding-left:10px">${MARKETING.bio}</div>
+    </div>`;
+  } else if(planMkt==="hooks"){
+    inner = `<div class="mono mb8" style="font-size:11px;color:#777;line-height:1.7">First 2 seconds decides if they watch. Use these openers.</div>`
+      + MARKETING.hooks.map(h=>`<div class="card mb8" style="padding:12px"><div style="font-size:13px;font-weight:600;line-height:1.5;margin-bottom:7px;border-left:3px solid var(--red);padding-left:10px">"${h.hook}"</div><div class="mono" style="font-size:10px;color:var(--orange);line-height:1.5">▸ ${h.why}</div></div>`).join("");
+  } else {
+    inner = `<div class="mono mb8" style="font-size:11px;color:#777;line-height:1.7">Start with 1–2 clients. Raise rates as demand grows.</div>`
+      + MARKETING.offers.map(o=>`<div class="card mb8" style="border-left:3px solid ${o.color};padding:13px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px"><div style="font-size:14px;font-weight:800">${o.tier}</div><div style="background:${o.color};color:#000;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:3px 9px">${o.price}</div></div><div class="mono" style="font-size:10px;color:#bbb;line-height:1.6">${o.detail}</div></div>`).join("");
+  }
+  return `<div class="card mb10" style="padding:12px;border-left:3px solid var(--red)"><div class="mono" style="font-size:11px;color:#ccc;line-height:1.8">You train 3× a day between school and a 9:45 PM work shift. That grind IS your brand. Document everything — the 5:30 AM sessions, the post-work bag rounds, the cut.</div></div>
+    <div class="scroll-row mb10">${pills}</div>${inner}`;
+}
+function setPlanMkt(s){ planMkt=s; renderPlan("marketing"); }
+
+function renderPlanTips(){
+  const pills = FIGHT_TIPS.map((t,i)=>`<button class="pill" style="background:${planTip===i?t.color:"#0d0f14"};color:${planTip===i?"#000":t.color};border-color:${planTip===i?t.color:"#1c1f26"}" onclick="setPlanTip(${i})">${t.icon} ${t.cat}</button>`).join("");
+  const t = FIGHT_TIPS[planTip];
+  return `<div class="scroll-row mb10">${pills}</div>
+    <div class="card mb8" style="border-left:4px solid ${t.color};padding:12px"><div style="font-size:18px;font-weight:900;letter-spacing:2px">${t.icon} ${t.cat}</div></div>
+    ${t.tips.map((tip,i)=>`<div class="card mb8" style="padding:12px;display:flex;gap:10px"><div style="background:${t.color};color:#000;font-weight:900;font-size:12px;padding:2px 7px;flex-shrink:0;align-self:flex-start">${String(i+1).padStart(2,"0")}</div><div class="mono" style="font-size:11px;color:#ccc;line-height:1.7">${tip}</div></div>`).join("")}`;
+}
+function setPlanTip(i){ planTip=i; renderPlan("tips"); }
+
+function renderPlanFightWeek(){
+  const pills = FIGHT_WEEK_DAYS.map((d,i)=>`<button class="pill ${planFW===i?"active-red":""}" onclick="setPlanFW(${i})" style="white-space:normal;text-align:center;line-height:1.2;padding:5px 8px">${d.day.split(" ")[0]}<br/>${d.day.split(" ")[1]}</button>`).join("");
+  const d = FIGHT_WEEK_DAYS[planFW];
+  const isFight = d.label==="FIGHT NIGHT";
+  return `<div style="background:#0d1a14;border:1px solid #2a9d8f44;padding:12px;border-radius:3px;margin-bottom:10px">
+    <div class="mono mb4" style="font-size:9px;color:var(--teal);letter-spacing:3px">NOV 2–7, 2026</div>
+    <div style="font-size:18px;font-weight:900;margin-bottom:6px">FIGHT WEEK</div>
+    <div class="mono" style="font-size:10px;color:#aaa;line-height:1.7">The work is done. Make weight. Rehydrate. Execute.</div>
+  </div>
+  <div class="scroll-row mb10">${pills}</div>
+  <div style="background:${isFight?"#1a0d0d":"#0d0f14"};border:1px solid ${isFight?"#e6394688":"#1c1f26"};padding:13px;border-radius:3px;margin-bottom:8px">
+    <div class="mono mb4" style="font-size:9px;color:var(--red);letter-spacing:4px">${d.day}</div>
+    <div style="font-size:24px;font-weight:900;letter-spacing:2px;color:${isFight?"var(--red)":"var(--text)"}">${d.label}</div>
+    <div style="margin-top:6px;display:flex;gap:12px;align-items:center"><div class="mono" style="font-size:9px;color:#555">TARGET:</div><div style="font-size:14px;font-weight:800;color:var(--gold)">${d.weight}</div></div>
+  </div>
+  ${[["🏋️ TRAINING",d.training,"var(--orange)"],["🥗 NUTRITION",d.nutrition,"var(--teal)"],["🧠 MENTAL",d.mental,"var(--blue)"]].map(([l,v,c])=>`<div class="card mb8" style="border-left:3px solid ${c};padding:11px 13px"><div class="mono mb6" style="font-size:9px;letter-spacing:3px;color:${c}">${l}</div><div class="mono" style="font-size:10px;color:#bbb;line-height:1.7">${v}</div></div>`).join("")}`;
+}
+function setPlanFW(i){ planFW=i; renderPlan("fightweek"); }
+
+// ═══════════════════════════════════════
+// STATS TAB
+// ═══════════════════════════════════════
+function renderStats(){
+  const rank = getRank(S.xp);
+  const wl = S.startWeight - S.currentWeight;
+  const last14w = S.weights.slice(-14);
+
+  const statCards = [
+    {l:"TOTAL XP",v:S.xp.toLocaleString(),c:"var(--gold)",ic:"⚡"},
+    {l:"STREAK",v:S.streak+"d",c:"var(--red)",ic:"🔥"},
+    {l:"MAX STREAK",v:S.maxStreak+"d",c:"var(--orange)",ic:"📈"},
+    {l:"DAYS LOGGED",v:S.totalDaysLogged,c:"var(--teal)",ic:"📅"},
+    {l:"TOTAL SESSIONS",v:S.totalSessions,c:"var(--blue)",ic:"💪"},
+    {l:"MMA SESSIONS",v:S.mmaSessions,c:"var(--orange)",ic:"🥊"},
+    {l:"LIFT SESSIONS",v:S.liftSessions,c:"var(--red)",ic:"🏋️"},
+    {l:"OUTDOOR",v:S.outdoorSessions,c:"var(--gold)",ic:"🌅"},
+    {l:"SPARRING",v:S.sparringSessions,c:"#9b5de5",ic:"⚡"},
+    {l:"PERFECT DAYS",v:S.perfectHabitDays,c:"var(--teal)",ic:"💯"},
+  ].map(({l,v,c,ic})=>`<div class="card" style="padding:10px;border-left:3px solid ${c}"><div style="font-size:18px">${ic}</div><div style="font-size:20px;font-weight:900;color:${c};line-height:1.1;margin-top:3px">${v}</div><div class="mono" style="font-size:8px;color:#555;margin-top:2px;letter-spacing:1px">${l}</div></div>`).join("");
+
+  // Weight chart
+  let weightChart = `<div class="mono" style="font-size:10px;color:#555;text-align:center;padding:16px 0">Log your weight daily to see your cut here</div>`;
+  if(last14w.length>0){
+    const allW = last14w.map(w=>w.weight);
+    const mn = Math.min(...allW), mx = Math.max(...allW), range = mx-mn||1;
+    const bars = last14w.map(({weight},i)=>{
+      const h = ((weight-mn)/range)*50+10;
+      const isLow = weight===Math.min(...allW);
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div class="mono" style="font-size:7px;color:${isLow?"var(--teal)":"#555"}">${weight}</div>
+        <div style="width:100%;background:${isLow?"var(--teal)":"var(--red)"};height:${h}px;border-radius:2px 2px 0 0;min-height:4px"></div>
+      </div>`;
+    }).join("");
+    weightChart = `<div style="display:flex;align-items:flex-end;gap:3px;height:70px;margin-bottom:6px">${bars}</div>
+      <div style="display:flex;justify-content:space-between">
+        <div><div class="mono" style="font-size:8px;color:#555">START</div><div style="font-size:14px;font-weight:800">${S.startWeight}lbs</div></div>
+        <div style="text-align:center"><div class="mono" style="font-size:8px;color:var(--gold)">LOST</div><div style="font-size:14px;font-weight:800;color:var(--gold)">${wl.toFixed(1)}lbs</div></div>
+        <div style="text-align:right"><div class="mono" style="font-size:8px;color:#555">NOW</div><div style="font-size:14px;font-weight:800">${S.currentWeight}lbs</div></div>
+      </div>`;
+  }
+
+  // Rank ladder
+  const rankLadder = RANKS.map(r=>{
+    const unlocked=S.xp>=r.minXP; const isCur=r.title===rank.title;
+    return `<div style="display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #1c1f26;opacity:${unlocked?1:.3}">
+      <div style="font-size:18px;flex-shrink:0">${r.icon}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:800;color:${isCur?r.color:"#777"};letter-spacing:1px">${r.title}</div><div class="mono" style="font-size:8px;color:#555">${r.minXP.toLocaleString()} XP</div></div>
+      ${isCur?`<div style="background:${r.color};color:#000;font-size:8px;font-weight:700;padding:2px 6px;letter-spacing:1px">YOU</div>`:unlocked?"<div style='color:var(--teal);font-size:14px'>✓</div>":""}
+    </div>`;
+  }).join("");
+
+  // Achievements
+  const achList = ACHIEVEMENTS.map(a=>{
+    const u=S.achievements.includes(a.id);
+    return `<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #1c1f26;opacity:${u?1:.4}">
+      <div style="font-size:22px;flex-shrink:0;filter:${u?"none":"grayscale(1)"}"> ${a.icon}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:800;color:${u?"var(--gold)":"#666"};letter-spacing:1px">${a.title}</div><div class="mono" style="font-size:9px;color:#666;margin-top:1px">${a.desc}</div></div>
+      <div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:10px;font-weight:700;color:${u?"var(--gold)":"#555"}">+${a.xp.toLocaleString()}</div>${u?"<div style='color:var(--teal);font-size:12px;margin-top:2px'>✓</div>":""}</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("tab-stats").innerHTML = `
+    <div style="font-size:20px;font-weight:900;letter-spacing:2px;margin-bottom:12px">YOUR STATS</div>
+    <div class="grid2 mb12">${statCards}</div>
+    <div class="card mb10" style="padding:12px">
+      <div class="mono mb8" style="font-size:9px;color:#555;letter-spacing:3px">WEIGHT HISTORY</div>
+      ${weightChart}
+    </div>
+    <div class="card mb10" style="padding:12px">
+      <div class="mono mb10" style="font-size:9px;color:#555;letter-spacing:3px">RANK LADDER</div>
+      ${rankLadder}
+    </div>
+    <div class="card mb10" style="padding:12px">
+      <div class="mono mb10" style="font-size:9px;color:#555;letter-spacing:3px">ACHIEVEMENTS (${S.achievements.length}/${ACHIEVEMENTS.length})</div>
+      ${achList}
+    </div>
+    <!-- Export / Import -->
+    <div class="card" style="padding:12px">
+      <div class="mono mb8" style="font-size:9px;color:#555;letter-spacing:3px">BACKUP & RESTORE</div>
+      <button id="export-btn" onclick="exportData()">⬇ EXPORT SAVE FILE</button>
+      <button id="import-btn" onclick="document.getElementById('import-file').click()">⬆ IMPORT SAVE FILE</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)"/>
+      <button onclick="resetData()" style="padding:9px;font-size:11px;font-weight:800;letter-spacing:2px;border-radius:3px;width:100%;margin-top:6px;background:none;border:1px solid var(--red);color:var(--red)">RESET ALL DATA</button>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════
+// HISTORY TAB
+// ═══════════════════════════════════════
+function renderHist(){
+  const logs = Object.entries(S.logs).sort(([a],[b])=>b.localeCompare(a)).slice(0,30);
+  if(logs.length===0){
+    document.getElementById("tab-hist").innerHTML=`<div style="font-size:20px;font-weight:900;letter-spacing:2px;margin-bottom:12px">TRAINING LOG</div><div class="card" style="padding:36px;text-align:center"><div style="font-size:36px;margin-bottom:10px">📋</div><div class="mono" style="font-size:10px;color:#555">No sessions yet. Start today!</div></div>`;
+    return;
+  }
+  const items = logs.map(([date,log])=>{
+    const d=new Date(date); const dn=Math.floor((new Date(date)-START_DATE)/86400000)+1;
+    const allDone=log.sessions?.outdoor&&log.sessions?.lift&&log.sessions?.mma;
+    const sc=(log.sessions?.outdoor?1:0)+(log.sessions?.lift?1:0)+(log.sessions?.mma?1:0)+(log.sparring?1:0);
+    const badges = [
+      log.sessions?.outdoor&&`<span class="hbadge" style="background:#e9c46a22;color:var(--gold)">🌅 OUT</span>`,
+      log.sessions?.lift&&`<span class="hbadge" style="background:#e6394422;color:var(--red)">🏋️ LIFT</span>`,
+      log.sessions?.mma&&`<span class="hbadge" style="background:#f4a26122;color:var(--orange)">🥊 MMA</span>`,
+      log.sparring&&`<span class="hbadge" style="background:#9b5de522;color:#9b5de5">⚡ SPAR</span>`,
+      log.habits?.water&&`<span class="hbadge" style="background:#2a9d8f22;color:var(--teal)">💧</span>`,
+      log.habits?.nutrition&&`<span class="hbadge" style="background:#2a9d8f22;color:var(--teal)">🥗</span>`,
+      log.habits?.reading&&`<span class="hbadge" style="background:#2a9d8f22;color:var(--teal)">📖</span>`,
+      log.habits?.photo&&`<span class="hbadge" style="background:#2a9d8f22;color:var(--teal)">📸</span>`,
+    ].filter(Boolean).join("");
+    return `<div class="card mb8" style="padding:11px;border-left:3px solid ${allDone?"var(--red)":"#444"}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
+        <div><div class="mono" style="font-size:8px;color:#555;letter-spacing:2px">DAY ${dn}</div><div style="font-size:14px;font-weight:800;letter-spacing:1px">${d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}).toUpperCase()}</div></div>
+        <div style="text-align:right"><div style="font-size:13px;font-weight:800;color:var(--gold)">+${log.xpEarned} XP</div><div class="mono" style="font-size:8px;color:#555">${sc} sess.</div></div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:${(log.weight||log.waterBottles||log.notes)?'5px':'0'}">${badges}</div>
+      ${log.weight?`<div class="mono" style="font-size:9px;color:var(--gold)">⚖️ ${log.weight} lbs</div>`:""}
+      ${log.waterBottles?`<div class="mono" style="font-size:9px;color:var(--water);margin-top:3px">💧 ${log.waterBottles}/8 bottles (${log.waterBottles*16}oz)</div>`:""}
+      ${log.notes?`<div class="mono" style="font-size:9px;color:#888;margin-top:5px;line-height:1.5;border-left:2px solid #333;padding-left:7px">${log.notes}</div>`:""}
+    </div>`;
+  }).join("");
+  document.getElementById("tab-hist").innerHTML=`<div style="font-size:20px;font-weight:900;letter-spacing:2px;margin-bottom:12px">TRAINING LOG</div>${items}`;
+}
+
+// ═══════════════════════════════════════
+// EXPORT / IMPORT / RESET
+// ═══════════════════════════════════════
+function exportData(){
+  const json = JSON.stringify(S, null, 2);
+  const blob = new Blob([json], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "fighter-os-save.json";
+  a.click(); URL.revokeObjectURL(url);
+}
+function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const imported = JSON.parse(ev.target.result);
+      if(imported.xp !== undefined){
+        S = imported;
+        const dk = todayStr();
+        if(S.logs[dk]){ todayLog = {...emptyLog(),...S.logs[dk]}; }
+        saveState(); updateHeader(); renderTab(currentTab);
+        alert("Save file imported successfully!");
+      } else { alert("Invalid save file."); }
+    }catch(err){ alert("Failed to read file: "+err.message); }
+  };
+  reader.readAsText(file);
+}
+function resetData(){
+  if(confirm("Reset ALL progress? This cannot be undone.")){
+    S = JSON.parse(JSON.stringify(INIT_STATE));
+    todayLog = emptyLog();
+    saveState(); updateHeader(); renderTab(currentTab);
+  }
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+loadState();
+updateHeader();
+renderHQ();
+</script>
+</body>
+</html>
