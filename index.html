@@ -110,6 +110,7 @@ input:focus,textarea:focus{border-color:var(--red)}
       <div class="card" style="padding:7px 5px;text-align:center"><div style="font-size:13px">📅</div><div style="font-size:15px;font-weight:900;line-height:1.1" id="qs-day">D1</div><div class="mono" style="font-size:8px;color:#555;margin-top:1px">TODAY</div></div>
       <div class="card" style="padding:7px 5px;text-align:center"><div style="font-size:13px">🏆</div><div style="font-size:15px;font-weight:900;line-height:1.1" id="qs-medals">0</div><div class="mono" style="font-size:8px;color:#555;margin-top:1px">MEDALS</div></div>
     </div>
+    <div id="date-nav"></div>
   </div>
 
   <!-- NAV -->
@@ -287,7 +288,7 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){ S = JSON.parse(raw); }
   }catch(e){ console.warn("Load failed",e); }
-  const dk = todayStr();
+  const dk = viewDate;
   if(S.logs[dk]){ todayLog = {...emptyLog(),...S.logs[dk]}; }
 }
 
@@ -297,17 +298,122 @@ function saveState(){
 }
 
 // ═══════════════════════════════════════
+// DATE NAVIGATION
+// viewDate drives everything — defaults to EST "today"
+// ═══════════════════════════════════════
+
+// Get current date string in EST (UTC-5 / UTC-4 DST)
+function estNow(){
+  // Get UTC offset for EST: standard = -300 min, DST = -240 min
+  const now = new Date();
+  // Use Intl to get EST date string reliably
+  const estStr = now.toLocaleDateString("en-CA",{timeZone:"America/New_York"}); // YYYY-MM-DD
+  return estStr;
+}
+
+let viewDate = estNow(); // the date currently being viewed/logged
+
+// Advance viewDate to true today (EST) — called on load and at midnight
+function syncToToday(){
+  const real = estNow();
+  // Only advance if the real date has moved forward
+  if(real >= viewDate){ viewDate = real; }
+  scheduleMidnightAdvance();
+}
+
+// Schedule auto-advance at next EST midnight
+function scheduleMidnightAdvance(){
+  const now = new Date();
+  // Get current EST time
+  const estMidnight = new Date(now.toLocaleDateString("en-US",{timeZone:"America/New_York"}) + " 00:00:00");
+  // Next midnight = today's EST midnight + 1 day
+  const nextMidnight = new Date(estMidnight.getTime() + 86400000);
+  const msUntilMidnight = nextMidnight - now;
+  setTimeout(()=>{
+    viewDate = estNow();
+    todayLog = emptyLog();
+    const dk = viewDate;    if(S.logs[dk]){ todayLog = {...emptyLog(),...S.logs[dk]}; }
+    updateHeader();
+    renderTab(currentTab);
+    scheduleMidnightAdvance(); // schedule next one
+  }, msUntilMidnight);
+}
+
+function goToPrevDay(){
+  const d = new Date(viewDate+"T12:00:00");
+  d.setDate(d.getDate()-1);
+  viewDate = d.toLocaleDateString("en-CA");
+  loadDayIntoLog(viewDate);
+  updateHeader();
+  renderTab(currentTab);
+}
+function goToNextDay(){
+  const d = new Date(viewDate+"T12:00:00");
+  d.setDate(d.getDate()+1);
+  const candidate = d.toLocaleDateString("en-CA");
+  if(candidate <= estNow()){
+    viewDate = candidate;
+    loadDayIntoLog(viewDate);
+    updateHeader();
+    renderTab(currentTab);
+  }
+}
+function goToToday(){
+  viewDate = estNow();
+  loadDayIntoLog(viewDate);
+  updateHeader();
+  renderTab(currentTab);
+}
+function jumpToDate(val){
+  if(!val) return;
+  // Clamp to valid range
+  const minD = "2026-05-15";
+  const maxD = estNow();
+  if(val < minD) val = minD;
+  if(val > maxD) val = maxD;
+  viewDate = val;
+  loadDayIntoLog(viewDate);
+  updateHeader();
+  renderTab(currentTab);
+}
+function loadDayIntoLog(dk){
+  if(S.logs[dk]){ todayLog = {...emptyLog(),...S.logs[dk]}; }
+  else { todayLog = emptyLog(); }
+}
+function isViewingToday(){ return viewDate === estNow(); }
+function isViewingPast(){ return viewDate < estNow(); }
+
+// ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
-function todayStr(){ return new Date().toISOString().split("T")[0]; }
-function getDayNum(){ const d=Math.floor((new Date()-START_DATE)/86400000)+1; return Math.max(1,Math.min(d,TOTAL_DAYS)); }
-function getDaysLeft(){ return Math.max(0,Math.ceil((FIGHT_DATE-new Date())/86400000)); }
+function todayStr(){ return viewDate; } // now driven by viewDate
+function getRealToday(){ return estNow(); }
+function getDayNum(dateStr){
+  const d = dateStr || viewDate;
+  const n = Math.floor((new Date(d+"T12:00:00")-START_DATE)/86400000)+1;
+  return Math.max(1,Math.min(n,TOTAL_DAYS));
+}
+function getDaysLeft(){ return Math.max(0,Math.ceil((FIGHT_DATE-new Date(estNow()+"T12:00:00"))/86400000)); }
 function getRank(xp){ let r=RANKS[0]; for(const rk of RANKS){if(xp>=rk.minXP)r=rk;} return r; }
 function getNextRank(xp){ for(const r of RANKS){if(xp<r.minXP)return r;} return null; }
 function getCurrentPhase(){
+  const dn = getDayNum();
   let cum=0;
-  for(const p of MACRO_PHASES){ cum+=p.span; if(getDayNum()<=cum) return p; }
+  for(const p of MACRO_PHASES){ cum+=p.span; if(dn<=cum) return p; }
   return MACRO_PHASES[MACRO_PHASES.length-1];
+}
+// Auto-advance weekly plan to match current week
+function getCurrentWeekPhase(){
+  const dn = getDayNum(estNow());
+  if(dn<=75) return 0;       // p1 pre-camp
+  if(dn<=118) return 1;      // p2 early camp
+  if(dn<=154) return 2;      // p3 peak camp
+  return 3;                  // p4 taper
+}
+// Get day of week index (0=Mon...6=Sun) from a date string
+function getDayOfWeekIdx(dateStr){
+  const d = new Date(dateStr+"T12:00:00"); // noon avoids DST/UTC edge cases
+  return (d.getDay()+6)%7; // Mon=0, Sun=6
 }
 
 function checkAchievements(){
@@ -369,8 +475,26 @@ function updateHeader(){
   document.getElementById("days-left").textContent = getDaysLeft();
   document.getElementById("qs-streak").textContent = S.streak+"d";
   document.getElementById("qs-weight").textContent = S.currentWeight+"lb";
-  document.getElementById("qs-day").textContent = "D"+getDayNum();
+  document.getElementById("qs-day").textContent = "D"+getDayNum(estNow());
   document.getElementById("qs-medals").textContent = S.achievements.length;
+
+  // Date nav bar
+  const isToday = isViewingToday();
+  const isPast = isViewingPast();
+  const vd = new Date(viewDate+"T12:00:00");
+  const dayLabel = vd.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  const dayNum = getDayNum(viewDate);
+  document.getElementById("date-nav").innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#0d0f14;border:1px solid #1c1f26;border-radius:3px;padding:6px 10px;margin-top:8px">
+      <button onclick="goToPrevDay()" style="background:none;color:#888;font-size:18px;font-weight:700;padding:2px 8px;border-radius:3px;line-height:1" ${getDayNum(viewDate)<=1?"disabled style='opacity:.3'":""}>‹</button>
+      <div style="text-align:center;flex:1">
+        <div style="font-size:13px;font-weight:800;letter-spacing:2px;color:${isToday?"var(--red)":"var(--gold)"}">${isToday?"TODAY · ":""}DAY ${dayNum}</div>
+        <div class="mono" style="font-size:9px;color:#888">${dayLabel.toUpperCase()}</div>
+      </div>
+      <button onclick="goToNextDay()" style="background:none;color:${isToday?"#333":"#888"};font-size:18px;font-weight:700;padding:2px 8px;border-radius:3px;line-height:1" ${isToday?"disabled":""}>›</button>
+    </div>
+    ${!isToday ? `<button onclick="goToToday()" style="width:100%;margin-top:5px;background:none;border:1px solid var(--red);color:var(--red);padding:5px;font-size:10px;font-weight:800;letter-spacing:3px;border-radius:3px">↑ BACK TO TODAY</button>` : ""}
+  `;
 }
 
 // ═══════════════════════════════════════
@@ -378,22 +502,28 @@ function updateHeader(){
 // ═══════════════════════════════════════
 function renderHQ(){
   const phase = getCurrentPhase();
-  const dayNum = getDayNum();
+  const dayNum = getDayNum(viewDate);
   const daysLeft = getDaysLeft();
   const wl = S.startWeight - S.currentWeight;
-  const dk = todayStr();
+  const dk = viewDate;
   const tl = S.logs[dk];
   const done = tl?.sessions?.outdoor && tl?.sessions?.lift && tl?.sessions?.mma;
   const bottles = tl?.waterBottles||0;
+  const isPast = isViewingPast();
+  const isToday = isViewingToday();
 
-  // Last 7 days grid
+  // Last 7 days grid — anchored to EST today, not UTC
+  const estToday = estNow();
   const days7 = Array.from({length:7},(_,i)=>{
-    const d = new Date(Date.now()-(6-i)*86400000).toISOString().split("T")[0];
+    // Build each date by offsetting from EST today string directly
+    const base = new Date(estToday+"T12:00:00"); // noon EST avoids DST edge cases
+    base.setDate(base.getDate()-(6-i));
+    const d = base.toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
     const lg = S.logs[d];
     const full = lg?.sessions?.outdoor && lg?.sessions?.lift && lg?.sessions?.mma;
     const partial = lg?.completed;
     const isT = d===dk;
-    const dl = ["S","M","T","W","T","F","S"][new Date(d).getDay()];
+    const dl = ["S","M","T","W","T","F","S"][base.getDay()];
     return `<div style="text-align:center">
       <div class="mono" style="font-size:8px;color:#555;margin-bottom:3px">${dl}</div>
       <div style="aspect-ratio:1;border-radius:2px;background:${full?"var(--red)":partial?"#e6394666":"#1c1f26"};border:2px solid ${isT?"var(--red)":"transparent"};display:flex;align-items:center;justify-content:center;font-size:10px">${full?"✓":partial?"·":""}</div>
@@ -435,7 +565,7 @@ function renderHQ(){
           </div>`;
         }).join("")}
       </div>
-      ${!done ? '<button onclick="switchTab(\'log\')" style="width:100%;background:var(--red);color:#fff;padding:11px;font-size:14px;font-weight:900;letter-spacing:3px;border-radius:3px">LOG TODAY →</button>' : ''}
+      ${!done ? `<button onclick="switchTab('log')" style="width:100%;background:var(--red);color:#fff;padding:11px;font-size:14px;font-weight:900;letter-spacing:3px;border-radius:3px">${isPast?"LOG MISSED DAY →":"LOG TODAY →"}</button>` : (isPast ? `<button onclick="switchTab('log')" style="width:100%;background:#1c1f26;color:var(--gold);padding:8px;font-size:12px;font-weight:800;letter-spacing:2px;border-radius:3px;border:1px solid var(--gold)">EDIT DAY ✏️</button>` : "")}
       <!-- Water mini -->
       <div style="margin-top:10px;background:#111315;border-radius:3px;padding:8px 10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
@@ -470,9 +600,12 @@ function renderHQ(){
 // LOG TAB
 // ═══════════════════════════════════════
 function renderLog(){
-  const dayNum = getDayNum();
-  const dateLabel = new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}).toUpperCase();
-  const alreadyDone = !!S.logs[todayStr()]?.completed;
+  const dayNum = getDayNum(viewDate);
+  const vd = new Date(viewDate+"T12:00:00");
+  const dateLabel = vd.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}).toUpperCase();
+  const alreadyDone = !!S.logs[viewDate]?.completed;
+  const isPast = isViewingPast();
+  const isToday = isViewingToday();
 
   let xpPreview = 0;
   if(todayLog.sessions.outdoor) xpPreview+=XP_VALUES.outdoor;
@@ -504,9 +637,9 @@ function renderLog(){
 
   document.getElementById("tab-log").innerHTML = `
     <div class="mb12">
-      <div class="mono mb4" style="font-size:9px;color:var(--red);letter-spacing:3px">DAY ${dayNum} — ${dateLabel}</div>
-      <div style="font-size:22px;font-weight:900;letter-spacing:2px">LOG YOUR DAY</div>
-      ${alreadyDone ? '<div class="mono" style="font-size:10px;color:var(--gold);margin-top:3px">⚡ Already logged — update anytime</div>' : ''}
+      <div class="mono mb4" style="font-size:9px;color:${isPast?"var(--gold)":"var(--red)"};letter-spacing:3px">DAY ${dayNum} — ${dateLabel}</div>
+      <div style="font-size:22px;font-weight:900;letter-spacing:2px">${isPast?"EDIT PAST DAY":"LOG YOUR DAY"}</div>
+      ${alreadyDone ? '<div class="mono" style="font-size:10px;color:var(--gold);margin-top:3px">⚡ Already logged — update anytime</div>' : (isPast ? '<div class="mono" style="font-size:10px;color:#888;margin-top:3px">Logging a past day — data will be saved</div>' : '')}
     </div>
 
     <!-- Sessions -->
@@ -627,13 +760,14 @@ function removeBottle(){
 }
 
 function submitDay(){
-  const dk = todayStr();
+  const dk = viewDate;
   const wVal = document.getElementById("weight-input")?.value || todayLog.weight;
   const nVal = document.getElementById("notes-input")?.value || todayLog.notes;
   todayLog.weight = wVal;
   todayLog.notes = nVal;
 
   const already = !!S.logs[dk]?.completed;
+  const isToday = isViewingToday();
   let xp = 0;
   if(todayLog.sessions.outdoor) xp+=XP_VALUES.outdoor;
   if(todayLog.sessions.lift)    xp+=XP_VALUES.lift;
@@ -645,10 +779,15 @@ function submitDay(){
   if(todayLog.sparring)         xp+=XP_VALUES.sparring;
 
   const allH = Object.values(todayLog.habits).every(Boolean);
-  const yest = new Date(Date.now()-86400000).toISOString().split("T")[0];
-  const hadYest = !!S.logs[yest]?.completed;
-  const newStreak = already ? S.streak : (hadYest ? S.streak+1 : 1);
-  if(newStreak>1 && !already) xp += XP_VALUES.streak_bonus * Math.min(newStreak,10);
+
+  // Streak only updates for today's date, not past edits
+  let newStreak = S.streak;
+  if(isToday && !already){
+    const yest = new Date(Date.now()-86400000).toLocaleDateString("en-CA",{timeZone:"America/New_York"});
+    const hadYest = !!S.logs[yest]?.completed;
+    newStreak = hadYest ? S.streak+1 : 1;
+    xp += XP_VALUES.streak_bonus * Math.min(newStreak,10);
+  }
 
   todayLog.xpEarned = xp;
   todayLog.completed = true;
@@ -657,13 +796,17 @@ function submitDay(){
     const ei = S.weights.findIndex(w=>w.date===dk);
     if(ei>=0) S.weights[ei]={date:dk,weight:parseFloat(wVal)};
     else S.weights.push({date:dk,weight:parseFloat(wVal)});
+    // Sort weights by date
+    S.weights.sort((a,b)=>a.date.localeCompare(b.date));
   }
 
   if(!already){
     S.xp += xp;
-    S.streak = newStreak;
-    S.maxStreak = Math.max(S.maxStreak, newStreak);
-    S.currentWeight = wVal ? parseFloat(wVal) : S.currentWeight;
+    if(isToday){
+      S.streak = newStreak;
+      S.maxStreak = Math.max(S.maxStreak, newStreak);
+    }
+    if(wVal) S.currentWeight = parseFloat(wVal);
     S.totalDaysLogged++;
     S.totalSessions += (todayLog.sessions.outdoor?1:0)+(todayLog.sessions.lift?1:0)+(todayLog.sessions.mma?1:0)+(todayLog.sparring?1:0);
     S.mmaSessions += todayLog.sessions.mma?1:0;
@@ -672,6 +815,7 @@ function submitDay(){
     S.sparringSessions += todayLog.sparring?1:0;
     S.perfectHabitDays += allH?1:0;
   } else {
+    // Updating a past day — only update weight if provided
     if(wVal) S.currentWeight = parseFloat(wVal);
   }
 
@@ -681,7 +825,7 @@ function submitDay(){
   saveState();
   updateHeader();
   renderLog();
-  renderHQ();
+  if(currentTab==="hq") renderHQ();
 
   if(newAch.length>0) showAchievement(newAch[0]);
 }
@@ -693,6 +837,7 @@ let planSection = "phases";
 let planPhase = 0;
 let planWkPhase = 0;
 let planWkDay = 0;
+let planWkManual = false; // true once user manually selects a phase/day
 let planNut = 0;
 let planMkt = "platforms";
 let planTip = 0;
@@ -700,6 +845,12 @@ let planFW = 0;
 
 function renderPlan(section){
   planSection = section || planSection;
+  // Auto-sync weekly plan phase + day to current week if not manually set
+  if(!planWkManual){
+    planWkPhase = getCurrentWeekPhase();
+    planWkDay = getDayOfWeekIdx(estNow());
+    if(planWkDay > 6) planWkDay = 6;
+  }
   const subNavItems = [["phases","PHASES"],["weekly","WORKOUTS"],["nutrition","NUTRITION"],["marketing","MARKETING"],["tips","FIGHT TIPS"],["fightweek","FIGHT WEEK"]];
   const subNav = subNavItems.map(([id,l])=>`<button class="pill ${planSection===id?"active-red":""}" onclick="setPlanSection('${id}')">${l}</button>`).join("");
 
@@ -741,7 +892,11 @@ function renderPlanWeekly(){
   const p = MACRO_PHASES[planWkPhase];
   if(!tpl) return "";
   const SC = {OUTDOOR:"#e9c46a",LIFT:"#e63946",MMA:"#f4a261",REST:"#333"};
-  const dayPills = tpl.days.map((d,i)=>`<button class="pill ${planWkDay===i?"active-red":""}" onclick="setPlanWkDay(${i})">${d.day}</button>`).join("");
+  const dayPills = tpl.days.map((d,i)=>{
+    const isCurrentDay = !planWkManual && i===getDayOfWeekIdx(estNow()) && planWkPhase===getCurrentWeekPhase();
+    return `<button class="pill ${planWkDay===i?"active-red":""}" onclick="setPlanWkDay(${i})" style="${isCurrentDay&&planWkDay!==i?"border-color:var(--gold);color:var(--gold)":""}">${d.day}${isCurrentDay?" ·":""}</button>`;
+  }).join("");
+  const autoSyncBtn = planWkManual ? `<button onclick="planWkManual=false;renderPlan('weekly')" style="width:100%;margin-bottom:8px;background:none;border:1px solid var(--teal);color:var(--teal);padding:5px;font-size:10px;font-weight:800;letter-spacing:2px;border-radius:3px">↺ SYNC TO THIS WEEK</button>` : `<div class="mono" style="font-size:9px;color:var(--teal);margin-bottom:6px;text-align:center">⚡ AUTO-SYNCED TO CURRENT WEEK & DAY</div>`;
   const sessions = tpl.days[planWkDay].sessions.map(s=>`
     <div class="card mb8" style="border-top:3px solid ${SC[s.type]||"#333"};padding:12px">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px">
@@ -759,10 +914,11 @@ function renderPlanWeekly(){
       <div class="mono" style="font-size:9px;color:#888;line-height:1.5">${tpl.note}</div>
     </div>
     <div class="scroll-row mb10">${dayPills}</div>
+    ${autoSyncBtn}
     ${sessions}`;
 }
-function setPlanWkPhase(i){ planWkPhase=i; planWkDay=0; renderPlan("weekly"); }
-function setPlanWkDay(i){ planWkDay=i; renderPlan("weekly"); }
+function setPlanWkPhase(i){ planWkPhase=i; planWkDay=0; planWkManual=true; renderPlan("weekly"); }
+function setPlanWkDay(i){ planWkDay=i; planWkManual=true; renderPlan("weekly"); }
 
 function renderPlanNutrition(){
   const pills = NUTRITION.map((n,i)=>`<button class="pill" style="background:${planNut===i?n.color:"#0d0f14"};color:${planNut===i?"#000":n.color};border-color:${planNut===i?n.color:"#1c1f26"}" onclick="setPlanNut(${i})">${n.phase}</button>`).join("");
@@ -979,7 +1135,7 @@ function importData(e){
       const imported = JSON.parse(ev.target.result);
       if(imported.xp !== undefined){
         S = imported;
-        const dk = todayStr();
+        const dk = viewDate;
         if(S.logs[dk]){ todayLog = {...emptyLog(),...S.logs[dk]}; }
         saveState(); updateHeader(); renderTab(currentTab);
         alert("Save file imported successfully!");
@@ -1000,6 +1156,7 @@ function resetData(){
 // INIT
 // ═══════════════════════════════════════
 loadState();
+syncToToday(); // sets viewDate to EST today + schedules midnight auto-advance
 updateHeader();
 renderHQ();
 </script>
